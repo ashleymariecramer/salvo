@@ -4,11 +4,9 @@
 
 package edu.example;
 
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
+import javax.persistence.*;
 import java.util.Date;
+import java.util.Set;
 
 @Entity  // tells Java to create a 'Game' table for this class
 public class Game {
@@ -16,23 +14,26 @@ public class Game {
     @Id
     @GeneratedValue(strategy= GenerationType.AUTO)
     private long id;
-    private Date date;
+    private Date creationDate;
 
-    public Game() {
-        this.date = new Date();
+    public Game() { }
+
+    public Game(long offset) {
+        Date now = new Date();
+        this.creationDate = Date.from(now.toInstant().plusSeconds(offset));
     }
 
-    public Date getDate() {
-        return date;
+    public Date getCreationDate() {
+        return creationDate;
     }
 
-    public void setDate(Date date) {
-        this.date = date;
+    public void setCreationDate(Date creationDate) {
+        this.creationDate = creationDate;
     }
 
-    public String toString() {
-        return id + " " + date;
-    }
+    @OneToMany(mappedBy="game", fetch= FetchType.EAGER)
+    Set<GamePlayer> gameplayers;
 }
+
 
 

@@ -4,10 +4,8 @@
 
 package edu.example;
 
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
+import javax.persistence.*;
+import java.util.Set;
 
 @Entity  // tells Java to create a 'Player' table for this class
 public class Player {
@@ -23,7 +21,6 @@ public class Player {
     public Player(String nickname, String email) {
         this.nickname = nickname;
         this.username = email;
-
     }
 
     public String getNickname() {
@@ -43,9 +40,8 @@ public class Player {
         this.username = email;
     }
 
-    public String toString() {
-        return nickname + " " + username;
-    }
+    @OneToMany(mappedBy="player", fetch= FetchType.EAGER)
+    Set<GamePlayer> gameplayers;
 
 
 }

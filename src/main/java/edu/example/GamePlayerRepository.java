@@ -10,7 +10,7 @@ import java.util.List;
  */
 
 @RepositoryRestResource
-public interface GameRepository extends JpaRepository<Game, Long> {
-    //List<Game> findByCreationDate(Date creationDate);
+public interface GamePlayerRepository extends JpaRepository<GamePlayer, Long> {
+    //List<GamePlayer> findByJoinDate(Date joinDate);
 
 }
