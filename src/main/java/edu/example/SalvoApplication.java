@@ -30,9 +30,11 @@ public class SalvoApplication {
 			Game game1 = new Game();
 			Game game2 = new Game();
 			Game game3 = new Game();
+			Game game4 = new Game();
 			GameRepo.save(game1);
 			GameRepo.save(game2);
 			GameRepo.save(game3);
+			GameRepo.save(game4);
 		};
 	}
 }
