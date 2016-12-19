@@ -31,7 +31,6 @@ public class Player {
         this.nickname = firstName;
     }
 
-
     public String getUsername() {
         return username;
     }
@@ -40,8 +39,14 @@ public class Player {
         this.username = email;
     }
 
+    public void setId(long id) {
+        this.id = id;
+    }
+    public long getId() {
+        return id;
+    }
+
     @OneToMany(mappedBy="player", fetch= FetchType.EAGER)
     Set<GamePlayer> gameplayers;
-
 
 }

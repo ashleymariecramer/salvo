@@ -3,6 +3,7 @@ package edu.example;
 import javax.persistence.*;
 import java.util.Date;
 
+
 /**
  * Created by ashleymariecramer on 13/12/16.
  */
@@ -12,16 +13,22 @@ public class GamePlayer {
     @GeneratedValue(strategy= GenerationType.AUTO)
     private long id;
     private Date joinDate;
-    //private long gameId;
-    //private long playerId;
 
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name="game_id")
     private Game game;
 
+    private Game getGame() {
+        return game;
+    }
+
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name="player_id")
     private Player player;
+
+    public Player getPlayer() {
+        return player;
+    }
 
     public GamePlayer(){}
 
@@ -38,6 +45,14 @@ public class GamePlayer {
 
     public void setJoinDate(Date joinDate) {
         this.joinDate = joinDate;
+    }
+
+    public long getId() {
+        return id;
+    }
+
+    public void setId(long id) {
+        this.id = id;
     }
 
 

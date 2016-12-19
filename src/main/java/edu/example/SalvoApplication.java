@@ -51,14 +51,14 @@ public class SalvoApplication {
 			// create game players - 2 per game
 			GamePlayer gamePlayer1 = new GamePlayer(0, game1, player1);
 			GamePlayer gamePlayer2 = new GamePlayer(30, game1, player2);
-			GamePlayer gamePlayer3 = new GamePlayer(1000, game2, player1);
-			GamePlayer gamePlayer4 = new GamePlayer(0, game2, player2);
+			GamePlayer gamePlayer3 = new GamePlayer(0, game2, player1);
+			GamePlayer gamePlayer4 = new GamePlayer(650, game2, player2);
 			GamePlayer gamePlayer5 = new GamePlayer(450, game3, player2);
 			GamePlayer gamePlayer6 = new GamePlayer(0, game3, player4);
 			GamePlayer gamePlayer7 = new GamePlayer(280, game4, player2);
 			GamePlayer gamePlayer8 = new GamePlayer(0, game4, player1);
 			GamePlayer gamePlayer9 = new GamePlayer(0, game5, player4);
-			GamePlayer gamePlayer10 = new GamePlayer(2100, game5, player1);
+			GamePlayer gamePlayer10 = new GamePlayer(310, game5, player1);
 			GamePlayer gamePlayer11 = new GamePlayer(0, game6, player3);
 			GamePlayer gamePlayer12 = new GamePlayer(0, game7, player4);
 			GamePlayer gamePlayer13 = new GamePlayer(0, game8, player3);
