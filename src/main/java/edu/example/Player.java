@@ -10,12 +10,16 @@ import java.util.Set;
 @Entity  // tells Java to create a 'Player' table for this class
 public class Player {
 
+    //---------------------Properties(private)----------------------------------
     @Id // id instance variable holds the database key for this class.
     @GeneratedValue(strategy=GenerationType.AUTO) // tells JPA to get the ID from the DBMS.
     private long id;
     private String nickname;
     private String username;
+    @OneToMany(mappedBy="player", fetch= FetchType.EAGER)
+    private Set<GamePlayer> gameplayers;
 
+    // ---------------------Constructors(public)----------------------------------
     public Player() { }
 
     public Player(String nickname, String email) {
@@ -23,30 +27,27 @@ public class Player {
         this.username = email;
     }
 
-    public String getNickname() {
-        return nickname;
-    }
-
+    // ---------------------Methods(public)----------------------------------
     public void setNickname(String firstName) {
         this.nickname = firstName;
     }
 
-    public String getUsername() {
-        return username;
+    public String getNickname() {
+        return nickname;
     }
 
     public void setUsername(String email) {
         this.username = email;
     }
 
-    public void setId(long id) {
-        this.id = id;
+    public String getUsername() {
+        return username;
     }
+
     public long getId() {
         return id;
     }
 
-    @OneToMany(mappedBy="player", fetch= FetchType.EAGER)
-    Set<GamePlayer> gameplayers;
+
 
 }

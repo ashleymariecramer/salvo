@@ -15,9 +15,8 @@ import static java.util.stream.Collectors.toList;
 @RequestMapping("/api")
 public class SalvoController {
 
-    @Autowired
+    @Autowired //this injects an instance of the class GameRepository for use by this controller (Dependency Injection)
     private GameRepository repo;
-    //this creates an instace of the class GameRepository for use by this controller
 
     //1. List of Games
     @RequestMapping("/games")
