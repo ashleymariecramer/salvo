@@ -5,11 +5,12 @@
 package edu.example;
 
 import javax.persistence.*;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.Date;
-import java.util.List;
 import java.util.Set;
 
-import static java.util.stream.Collectors.toList;
 
 @Entity  // tells Java to create a 'Game' table for this class
 public class Game {
@@ -17,20 +18,23 @@ public class Game {
     @Id
     @GeneratedValue(strategy= GenerationType.AUTO)
     private long id;
-    private Date creationDate;
+    private LocalDateTime creationDate;
 
     public Game() { }
 
     public Game(long offset) {
         Date now = new Date();
-        this.creationDate = Date.from(now.toInstant().plusSeconds(offset));
+        //this.creationDate = Date.from(now.toInstant().plusSeconds(offset));
+        this.creationDate = LocalDateTime.ofInstant(
+                now.toInstant().plusSeconds(offset), ZoneId.systemDefault());
     }
 
-    public Date getCreationDate() {
+
+    public LocalDateTime getCreationDate() {
         return creationDate;
     }
 
-    public void setCreationDate(Date creationDate) {
+    public void setCreationDate(LocalDateTime creationDate) {
         this.creationDate = creationDate;
     }
 

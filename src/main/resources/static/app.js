@@ -1,14 +1,20 @@
 $(function() {
 
+//Main functions:
+   loadData();
+   $("#add_player").on("click", addPlayer);
+
+
+//Auxilary functions
+
   // display text in the output area
   function showOutput(text) {
     $("#output").text(text);
   }
 
   // load and display JSON sent by server for /players
-
   function loadData() {
-    $.get("/players")
+    $.get("/rest/players")
     .done(function(data) {
       showOutput(JSON.stringify(data, null, 2));
     })
@@ -18,7 +24,6 @@ $(function() {
   }
 
   // handler for when user clicks add person
-
   function addPlayer() {
     var username = $("#email").val();
     var nickname = $("#nickname").val();
@@ -29,7 +34,6 @@ $(function() {
 
   // code to post a new player using AJAX
   // on success, reload and data from server
-
   function postPlayer(username, nickname) {
     $.post({
       headers: {
@@ -48,7 +52,5 @@ $(function() {
     });
   }
 
-  $("#add_player").on("click", addPlayer);
 
-  loadData();
 });
