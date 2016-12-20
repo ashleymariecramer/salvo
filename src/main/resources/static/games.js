@@ -35,8 +35,6 @@ $(function() {
       + pad(date.second)
   }
 
-  var d = new Date();
-  console.log(ISODateString(d)); // prints something like 2009-09-28T19:03:12Z
 // get games data
 var object;
 
