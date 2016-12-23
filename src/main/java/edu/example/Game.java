@@ -6,8 +6,6 @@
 package edu.example;
 
 import javax.persistence.*;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.util.Date;
 import java.util.Set;
 
@@ -20,9 +18,8 @@ public class Game {
     @GeneratedValue(strategy= GenerationType.AUTO)
     private long id;
     private Date creationDate;
-
     @OneToMany(mappedBy="game", fetch= FetchType.EAGER)
-    private Set<GamePlayer> gameplayers; //Collection of Objects of type GamePlayer - 'gameplayers' is the name I've given to this collection.
+    private Set<GamePlayer> gamePlayers; //Collection of Objects of type GamePlayer - 'gameplayers' is the name I've given to this collection.
     //A set which contains objects from the class GamePlayer
 
 
@@ -32,8 +29,6 @@ public class Game {
     public Game(long offset) {
         Date now = new Date();
         this.creationDate = Date.from(now.toInstant().plusSeconds(offset));
-        //this.creationDate = LocalDateTime.ofInstant(
-        //        now.toInstant().plusSeconds(offset), ZoneId.systemDefault());
     }
 
     // ---------------------Methods(public)----------------------------------
@@ -51,7 +46,7 @@ public class Game {
 
     //when you call the method getGamePlayers() it returns the collection of objects 'gameplayers'
     public Set<GamePlayer> getGamePlayers() {
-        return gameplayers;
+        return gamePlayers;
     }
 
 }

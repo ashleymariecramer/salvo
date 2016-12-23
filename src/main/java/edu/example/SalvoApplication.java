@@ -6,7 +6,10 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
+import java.util.List;
 
 @SpringBootApplication
 public class SalvoApplication {
@@ -18,7 +21,8 @@ public class SalvoApplication {
 	@Bean
 	public CommandLineRunner initData(PlayerRepository playerRepo,
 									  GameRepository gameRepo,
-									  GamePlayerRepository gamePlayerRepo) {
+									  GamePlayerRepository gamePlayerRepo,
+									  ShipRepository shipRepo) {
 		return (args) -> {
 			// save a couple of customers
 			Player player1 = new Player("JB", "jack.bauer@hotmail.com");
@@ -78,6 +82,23 @@ public class SalvoApplication {
 			gamePlayerRepo.save(gamePlayer12);
 			gamePlayerRepo.save(gamePlayer13);
 			gamePlayerRepo.save(gamePlayer14);
+			// create new ships max 5 per gamePlayer
+			List<String> locations1 = Arrays.asList("H2", "H3", "H4");
+			List<String> locations2 = Arrays.asList("E1", "F1", "G1");
+			List<String> locations3 = Arrays.asList("B4", "B5");
+			List<String> locations4 = Arrays.asList("B5", "C5", "D5");
+			List<String> locations5 = Arrays.asList("F1", "F2");
+			Ship ship1 = new Ship("Destroyer", gamePlayer1, locations1);
+			Ship ship2 = new Ship("Submarine", gamePlayer1, locations2);
+			Ship ship3 = new Ship("Patrol Boat", gamePlayer1, locations3);
+			Ship ship4 = new Ship("Destroyer", gamePlayer2, locations4);
+			Ship ship5 = new Ship("Patrol Boat", gamePlayer2, locations5);
+			// add ships to repo
+			shipRepo.save(ship1);
+			shipRepo.save(ship2);
+			shipRepo.save(ship3);
+			shipRepo.save(ship4);
+			shipRepo.save(ship5);
 		};
 	}
 }

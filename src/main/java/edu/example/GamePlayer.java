@@ -1,9 +1,8 @@
 package edu.example;
 
 import javax.persistence.*;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.util.Date;
+import java.util.Set;
 
 
 /**
@@ -23,6 +22,9 @@ public class GamePlayer {
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name="player_id")
     private Player player;
+    @OneToMany(mappedBy="gamePlayer", fetch = FetchType.EAGER) //linking ship id to a gamePlayer like games to gamePlayer
+    private Set<Ship> ship; //Collection of Objects of type GamePlayer
+
 
     // ---------------------Constructors(public)----------------------------------
     public GamePlayer(){}
@@ -30,8 +32,6 @@ public class GamePlayer {
     public GamePlayer(long offset, Game game, Player player) {
         Date now = new Date();
         this.joinDate = Date.from(now.toInstant().plusSeconds(offset));
-        //this.joinDate = LocalDateTime.ofInstant(
-        //        now.toInstant().plusSeconds(offset), ZoneId.systemDefault());
         this.game = game;
         this.player = player;
     }
@@ -64,4 +64,13 @@ public class GamePlayer {
     public Player getPlayer() {
         return player;
     }
+
+    public void setShip(Set<Ship>  ship) {
+        this.ship = ship;
+    }
+    public Set<Ship> getShip() {
+        return ship;
+    }
+
+
 }
