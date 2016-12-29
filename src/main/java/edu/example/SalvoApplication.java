@@ -11,7 +11,7 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 
-@SpringBootApplication
+@SpringBootApplication //This is needed to use SpringBoot
 public class SalvoApplication {
 
 	public static void main(String[] args) {
@@ -82,12 +82,15 @@ public class SalvoApplication {
 			gamePlayerRepo.save(gamePlayer12);
 			gamePlayerRepo.save(gamePlayer13);
 			gamePlayerRepo.save(gamePlayer14);
-			// create new ships max 5 per gamePlayer
+			// create new locations using Array.asList
 			List<String> locations1 = Arrays.asList("H2", "H3", "H4");
 			List<String> locations2 = Arrays.asList("E1", "F1", "G1");
 			List<String> locations3 = Arrays.asList("B4", "B5");
 			List<String> locations4 = Arrays.asList("B5", "C5", "D5");
 			List<String> locations5 = Arrays.asList("F1", "F2");
+			// create new ships (max 5 per player) & assign locations to these
+			//could also combine these 2 steps in 1:
+			// Ship ship1 = new Ship("Destroyer", gamePlayer1, Arrays.asList("H2", "H3", "H4"));
 			Ship ship1 = new Ship("Destroyer", gamePlayer1, locations1);
 			Ship ship2 = new Ship("Submarine", gamePlayer1, locations2);
 			Ship ship3 = new Ship("Patrol Boat", gamePlayer1, locations3);
