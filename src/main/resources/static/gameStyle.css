@@ -1,0 +1,15 @@
+.key{
+    background-color: white;
+    color: grey;
+}
+
+.board{
+    background-color: blue;
+    border: 1px solid white;
+}
+
+td{
+    height: 30px;
+    width: 30px;
+    text-align: center;
+}

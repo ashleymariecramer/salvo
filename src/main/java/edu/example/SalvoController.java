@@ -10,6 +10,7 @@ import java.util.Map;
 import java.util.Set;
 
 import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toSet;
 
 /**
  * Created by ashleymariecramer on 14/12/16.
@@ -51,6 +52,7 @@ public class SalvoController {
         Map<String, Object> dto = new LinkedHashMap<String, Object>();
         dto.put("playerId", player.getId());
         dto.put("username", player.getUsername());
+        dto.put("nickname", player.getNickname());
         return dto;
     }
 
@@ -71,13 +73,13 @@ public class SalvoController {
 
     private Map<String, Object> makeGameViewDTO(GamePlayer gamePlayer, Long gamePlayerId) {
 
-        //TODO: YOU & OPPONENT details dop not need to be inside a list - how to remove it  - get parallel:false error
+        //TODO: YOU & OPPONENT details do not need to be inside a list - how to remove it  - get parallel:false error
         Map<String, Object> dto = new LinkedHashMap<String, Object>();
-            dto.put("Game View", makeGameDetailsDTO(gamePlayer.getGame()));
+            dto.put("GameView", makeGameDetailsDTO(gamePlayer.getGame()));
 //            dto.put("Game View", makeGameDTO(gamePlayer.getGame())); // Uses makeGame DTO but with only the game from the gamePlayer id
 //            dto.put("You", makePlayerDTO(gamePlayer.getPlayer())); // reuse the DTO for makePlayer from games api
             dto.put("You", gamePlayer.getGame().getGamePlayers().stream().filter(gp -> gp.getId() == gamePlayerId).map(gp -> makeGamePlayerDTO(gp)).collect(toList()));
-            dto.put("Your ships", gamePlayer.getShip().stream().map(ship -> makeShipDTO(ship)).collect(toList()));
+            dto.put("YourShips", gamePlayer.getShip().stream().map(ship -> makeShipDTO(ship)).collect(toList()));
             dto.put("Opponent", gamePlayer.getGame().getGamePlayers().stream().filter(gp -> gp.getId() != gamePlayerId).map(gp -> makeGamePlayerDTO(gp)).collect(toList()));
         //here we need stream because there are more than one ship per game player
             return dto;

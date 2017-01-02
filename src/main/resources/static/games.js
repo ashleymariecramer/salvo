@@ -4,11 +4,14 @@ $(function() {
    loadData();
 
 
+//Auxiliary Functions
+
   // display text in the output area
   function showOutput(text) {
         $("#output").text(text);
     }
 
+  //get data from JSON and create a new variable which contains the game Id, creation date and players and present this in a string
   function GamesMap(data) {
          data.map(function(gameData) {
             var game = {};
@@ -21,7 +24,7 @@ $(function() {
          });
   }
 
-
+//ajax call to the api to get the JSON data - if successful it uses data to draw a list of games if not it returns an error
   function loadData() {
     $.getJSON("/api/games")
     .done(function(data) {
