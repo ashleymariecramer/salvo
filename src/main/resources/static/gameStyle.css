@@ -1,15 +1,20 @@
+td{
+    height: 30px;
+    width: 30px;
+    text-align: center;
+    background-color: blue;
+    border: 1px solid white;
+}
+
 .key{
     background-color: white;
     color: grey;
 }
 
-.board{
-    background-color: blue;
-    border: 1px solid white;
+
+.ship{
+    background-color: grey;
+    border: 1px solid black;
 }
 
-td{
-    height: 30px;
-    width: 30px;
-    text-align: center;
-}
+

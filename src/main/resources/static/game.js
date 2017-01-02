@@ -4,7 +4,6 @@ $(function() {
    buildGrid();
    loadData();
 
-
 });
 
 //Auxiliary functions
@@ -23,15 +22,15 @@ $(function() {
           var numbers = ["","1","2","3","4","5","6","7","8","9","10"]; //array for horizontal axis - 1st is blank
           var gridRef = characters[i] + numbers[j];
           if (gridRef.length < 2 || gridRef === "10"){
-            var cell = '<td  ' + 'id="'+gridRef+'" '+' class="key"' + '>' + gridRef + '</td>';
+            var cell = '<td ' + 'class="'+ gridRef + ' key"' + '>' + gridRef + '</td>';
           } else {
-            var cell = '<td  ' + 'id="'+gridRef+'" '+' class="board"' + '>' + '</td>';
+            var cell = '<td ' + 'class="'+ gridRef + '"' + '>' + '</td>';
             }
           colStr += cell;
       }
       rows.push('<tr>' + colStr + '</tr>');
     }
-    document.getElementById("grid").innerHTML += rows.join("");
+    document.getElementById("ownGrid").innerHTML += rows.join("");
 
   }
 
@@ -61,7 +60,7 @@ $(function() {
             game.opp = gameData.Opponent.map(function(opp) {
                 return opp.player.nickname;
             });
-            $("#output").html("<h2>"+"Game Id: " + game.id + "</h2>" + "<h3>"+"Created on: " + game.created + "</h2>" + "<h3>"+ "You (" + game.you + ") are playing against " + game.opp + "</h3>");
+         $("#output").html("<h2>"+"Game Id: " + game.id + "</h2>" + "<h3>"+"Created on: " + game.created + "</h2>" + "<h3>"+ "You (" + game.you + ") are playing against " + game.opp + "</h3>");
 
      });
     }
@@ -70,16 +69,42 @@ $(function() {
   function loadData() {
     var gp = getGamePlayerIdFromURL(); //gets the gamePlayer(gp) id number from the url
     var url = "/api/game_view/"+gp; //inserts the gp id number into the api
-    console.log(url);
     $.getJSON(url)
     .done(function(data) {
           gameView(data);
+          findShipLocations(data);
           })
     .fail(function( jqXHR, textStatus ) {
       showOutput( "Failed: " + textStatus );
     });
   }
 
+//method to make an array with all the locations ships on the grid
+  function findShipLocations(data){
+        data.map(function(gameData) {
+        var ships = []; //loop through all game view data and extract all ship locations
+        for (var i = 0; i < gameData.YourShips.length; i++){
+            for (var j = 0; j < gameData.YourShips[i].locations.length; j++){
+                var location = gameData.YourShips[i].locations[j];
+                var gridClass =  location;
+                console.log($(this));
+                $("."+location).addClass("ship");
+//                $("#ownGrid").children().children("."+location).addClass("ship"); //Alternative for >1 grids
+                ships.push(location);
+                }
+            }
+        console.log(ships);
+        return ships;
+        });
+  }
+
+//// method to loop through grid and if class same as location
+//    function drawShips(ships){
+////        $("#ownGrid").each(function(){
+////             alert($(this).hasClass("class"))
+////
+////        });
+//    }
 
 
 
