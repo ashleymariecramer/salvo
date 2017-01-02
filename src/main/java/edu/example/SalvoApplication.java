@@ -22,7 +22,8 @@ public class SalvoApplication {
 	public CommandLineRunner initData(PlayerRepository playerRepo,
 									  GameRepository gameRepo,
 									  GamePlayerRepository gamePlayerRepo,
-									  ShipRepository shipRepo) {
+									  ShipRepository shipRepo,
+									  SalvoRepository salvoRepo) {
 		return (args) -> {
 			// save a couple of customers
 			Player player1 = new Player("JB", "jack.bauer@hotmail.com");
@@ -102,6 +103,16 @@ public class SalvoApplication {
 			shipRepo.save(ship3);
 			shipRepo.save(ship4);
 			shipRepo.save(ship5);
+			//create salvos
+			Salvo salvo1 = new Salvo(1, gamePlayer1, Arrays.asList("B5", "C5", "F1"));
+			Salvo salvo2 = new Salvo(1, gamePlayer2, Arrays.asList("B4", "B5", "B6"));
+			Salvo salvo3 = new Salvo(2, gamePlayer1, Arrays.asList("F2", "D5"));
+			Salvo salvo4 = new Salvo(2, gamePlayer2, Arrays.asList("E1", "H3", "A2"));
+			//save salvos to repo
+			salvoRepo.save(salvo1);
+			salvoRepo.save(salvo2);
+			salvoRepo.save(salvo3);
+			salvoRepo.save(salvo4);
 		};
 	}
 }

@@ -24,7 +24,8 @@ public class GamePlayer {
     private Player player;
     @OneToMany(mappedBy="gamePlayer", fetch = FetchType.EAGER) //linking ship id to a gamePlayer like games to gamePlayer
     private Set<Ship> ship; //Collection of Objects of type GamePlayer
-
+    @OneToMany(mappedBy="gamePlayer", fetch = FetchType.EAGER) //linking salvo id to a gamePlayer like games to gamePlayer
+    private Set<Salvo> salvo; //Collection of Objects of type GamePlayer
 
     // ---------------------Constructors(public)----------------------------------
     public GamePlayer(){}
@@ -72,5 +73,12 @@ public class GamePlayer {
         return ship;
     }
 
+    public Set<Salvo> getSalvo() {
+        return salvo;
+    }
+
+    public void setSalvo(Set<Salvo> salvo) {
+        this.salvo = salvo;
+    }
 
 }

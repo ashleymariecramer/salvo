@@ -1,20 +1,54 @@
+body{
+    color: SlateGrey;
+    font-family: Verdana;
+}
+
+h1{
+    color: DarkSlateGrey;
+    font-size: 30px;
+    text-align: center;
+}
+
+h2{
+    font-size: 25px;
+    text-align: center;
+}
+
+h3{
+    font-size: 20px;
+    text-align: center;
+}
+
+h4{
+    font-size: 18px;
+    color: DarkSlateGrey;
+    text-align: center;
+}
+
 td{
     height: 30px;
     width: 30px;
     text-align: center;
-    background-color: blue;
+    background-color: CornflowerBlue;
     border: 1px solid white;
+}
+
+
+.border{
+    border-radius: 10px;
+    border: 2px solid DarkSlateGrey;
+    padding: 15px 0px 25px 15px;
 }
 
 .key{
     background-color: white;
-    color: grey;
+    color: LightSlateGrey;
 }
 
 
 .ship{
-    background-color: grey;
-    border: 1px solid black;
+    background-color: LightSlateGrey;
+    border: 1px solid DimGrey;
 }
 
 

@@ -9,15 +9,29 @@
 <body>
 
 
-<div>
+<div class="container-fluid">
     <h1>Current Game in Play</h1>
 
         <div id="output"></div>
 
-        <table>
-            <tbody id="ownGrid">
-            </tbody>
-        </table>
+
+        <div class="row">
+            <div class="col-xs-4 col-xs-offset-1 border">
+                <h4><b>Your grid</b></h4>
+                <table>
+                    <tbody id="ownGrid">
+                    </tbody>
+                </table>
+            </div>
+            <div class="col-xs-4 col-xs-offset-2 border">
+                <h4><b>Opponent's grid</b></h4>
+                <table>
+                    <tbody id="opponentGrid">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
 
 
 </div>

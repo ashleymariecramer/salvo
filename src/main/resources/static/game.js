@@ -31,6 +31,7 @@ $(function() {
       rows.push('<tr>' + colStr + '</tr>');
     }
     document.getElementById("ownGrid").innerHTML += rows.join("");
+    document.getElementById("opponentGrid").innerHTML += rows.join("");
 
   }
 
@@ -60,7 +61,7 @@ $(function() {
             game.opp = gameData.Opponent.map(function(opp) {
                 return opp.player.nickname;
             });
-         $("#output").html("<h2>"+"Game Id: " + game.id + "</h2>" + "<h3>"+"Created on: " + game.created + "</h2>" + "<h3>"+ "You (" + game.you + ") are playing against " + game.opp + "</h3>");
+         $("#output").html("<h2>" + "You (<b>" + game.you + "</b>) are playing against <b>" + game.opp + "</b></h2>" + "<h3><i>"+"Game: " + game.id +", Created on: " + game.created + "</i></h3>");
 
      });
     }
@@ -79,14 +80,13 @@ $(function() {
     });
   }
 
-//method to make an array with all the locations ships on the grid
+//method to draw players own ships on their grid
   function findShipLocations(data){
         for (var i = 0; i < data[0].YourShips.length; i++){
             for (var j = 0; j < data[0].YourShips[i].locations.length; j++){
                 var location = data[0].YourShips[i].locations[j];
-                $("."+location).addClass("ship");
+                $("#ownGrid > tr > td."+location).addClass("ship"); //only adds ships to own grid
 //                $("#ownGrid").children().children("."+location).addClass("ship"); //Alternative for >1 grids
-//                $("#ownGrid > tr > td."+location).addClass("ship");    //Alternative for >1 grids
                 }
             }
   }
