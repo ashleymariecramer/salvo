@@ -81,30 +81,15 @@ $(function() {
 
 //method to make an array with all the locations ships on the grid
   function findShipLocations(data){
-        data.map(function(gameData) {
-        var ships = []; //loop through all game view data and extract all ship locations
-        for (var i = 0; i < gameData.YourShips.length; i++){
-            for (var j = 0; j < gameData.YourShips[i].locations.length; j++){
-                var location = gameData.YourShips[i].locations[j];
-                var gridClass =  location;
-                console.log($(this));
+        for (var i = 0; i < data[0].YourShips.length; i++){
+            for (var j = 0; j < data[0].YourShips[i].locations.length; j++){
+                var location = data[0].YourShips[i].locations[j];
                 $("."+location).addClass("ship");
 //                $("#ownGrid").children().children("."+location).addClass("ship"); //Alternative for >1 grids
-                ships.push(location);
+//                $("#ownGrid > tr > td."+location).addClass("ship");    //Alternative for >1 grids
                 }
             }
-        console.log(ships);
-        return ships;
-        });
   }
-
-//// method to loop through grid and if class same as location
-//    function drawShips(ships){
-////        $("#ownGrid").each(function(){
-////             alert($(this).hasClass("class"))
-////
-////        });
-//    }
 
 
 
