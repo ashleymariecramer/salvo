@@ -69,7 +69,11 @@ $(function() {
     $.getJSON(url)
     .done(function(data) {
           gameView(data);
-          findShipLocations(data);
+          drawOwnShipLocations(data);
+          locateOpponentShipLocations(data);
+          drawOwnSalvoLocations(data);
+          locateOpponentSalvoLocations(data);
+          determineHits();
           })
     .fail(function( jqXHR, textStatus ) {
       showOutput( "Failed: " + textStatus );
@@ -77,15 +81,50 @@ $(function() {
   }
 
 //method to draw players own ships on their grid
-  function findShipLocations(data){
+  function drawOwnShipLocations(data){
         for (var i = 0; i < data.yourShips.length; i++){
             for (var j = 0; j < data.yourShips[i].locations.length; j++){
                 var location = data.yourShips[i].locations[j];
                 $("#ownGrid > tr > td."+location).addClass("ship"); //only adds ships to own grid
-//                $("#ownGrid").children().children("."+location).addClass("ship"); //Alternative for >1 grids
+//              $("#ownGrid").children().children("."+location).addClass("ship"); //Alternative for >1 grids
+                }
+            }
+  }
+//method to draw opponents ships on their grid
+  function locateOpponentShipLocations(data){
+        for (var i = 0; i < data.opponentShips.length; i++){
+            for (var j = 0; j < data.opponentShips[i].locations.length; j++){
+                var location = data.opponentShips[i].locations[j];
+                $("#opponentGrid > tr > td."+location).addClass("shipHidden"); //only adds ships to own grid
                 }
             }
   }
 
+//method to draw players own salvos on opponent grid
+  function drawOwnSalvoLocations(data){
+        for (var i = 0; i < data.yourSalvoes.length; i++){
+            for (var j = 0; j < data.yourSalvoes[i].locations.length; j++){
+                var location = data.yourSalvoes[i].locations[j];
+                var turn = data.yourSalvoes[i].turn;
+                $("#opponentGrid > tr > td."+location).addClass("mySalvoes").html(turn); //only adds ships to own grid
+//              $("#ownGrid").children().children("."+location).addClass("ship"); //Alternative for >1 grids
+                }
+            }
+  }
+//method to draw opponents salvos on own grid
+  function locateOpponentSalvoLocations(data){
+        for (var i = 0; i < data.opponentSalvoes.length; i++){
+            for (var j = 0; j < data.opponentSalvoes[i].locations.length; j++){
+                var location = data.opponentSalvoes[i].locations[j];
+                var turn = data.yourSalvoes[i].turn;
+                $("#ownGrid > tr > td."+location).addClass("oppSalvoes").html(turn); //only adds ships to own grid
+                }
+            }
+  }
 
+//method to determine if salvos have hit any ships
+function determineHits(){
+    $(".shipHidden.mySalvoes").removeClass("shipHidden mySalvoes").addClass("hit");
+    $(".ship.oppSalvoes").removeClass("ship oppSalvoes").addClass("hit");
+}
 

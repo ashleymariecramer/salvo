@@ -51,4 +51,21 @@ td{
     border: 1px solid DimGrey;
 }
 
+.shipHidden{
+}
 
+.mySalvoes{
+    background-color: DarkSlateGrey;
+    border: 1px solid Black;
+    color: Black;
+}
+
+.oppSalvoes{
+    color: CornflowerBlue;
+}
+
+.hit{
+    background-color: Crimson;
+    border: 1px solid DarkRed;
+    color: DarkRed;
+}
