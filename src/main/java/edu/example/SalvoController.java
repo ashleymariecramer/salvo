@@ -71,8 +71,11 @@ public class SalvoController {
             dto.put("gameView", makeGameDetailsDTO(gamePlayer.getGame()));
             dto.put("you", gamePlayer.getGame().getGamePlayers().stream().filter(gp -> gp.getId() == gamePlayerId).findFirst().map(gp -> makeGamePlayerDTO(gp)).get());
             dto.put("yourShips", gamePlayer.getShip().stream().map(ship -> makeShipDTO(ship)).collect(toList()));
+            dto.put("yourSalvoes", gamePlayer.getGame().getGamePlayers().stream().filter(gp -> gp.getId() == gamePlayerId).findFirst().get().getSalvo().stream().map(salvo -> makeSalvoDTO(salvo)).collect(toList()));
             dto.put("opponent", gamePlayer.getGame().getGamePlayers().stream().filter(gp -> gp.getId() != gamePlayerId).findFirst().map(gp -> makeGamePlayerDTO(gp)).get());
-            return dto;
+            dto.put("opponentSalvoes", gamePlayer.getGame().getGamePlayers().stream().filter(gp -> gp.getId() != gamePlayerId).findFirst().get().getSalvo().stream().map(salvo -> makeSalvoDTO(salvo)).collect(toList()));
+
+        return dto;
     }
 
     private Map<String, Object> makeGameDetailsDTO(Game game) {
@@ -91,6 +94,12 @@ public class SalvoController {
         return dto;
     }
 
+    private Map<String, Object> makeSalvoDTO(Salvo salvo) {
+        Map<String, Object> dto = new LinkedHashMap<String, Object>();
+        dto.put("turn", salvo.getTurn());
+        dto.put("locations", salvo.getLocations());
+        return dto;
+    }
 
 
 
