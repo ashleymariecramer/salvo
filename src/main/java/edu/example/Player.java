@@ -17,7 +17,9 @@ public class Player {
     private String nickname;
     private String username;
     @OneToMany(mappedBy="player", fetch= FetchType.EAGER)
-    private Set<GamePlayer> gameplayers;
+    private Set<GamePlayer> gamePlayers;
+    @OneToMany(mappedBy="player", fetch= FetchType.EAGER)
+    private Set<GameScore> gameScores;
 
     // ---------------------Constructors(public)----------------------------------
     public Player() { }

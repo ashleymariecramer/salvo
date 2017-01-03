@@ -1,9 +1,7 @@
 package edu.example;
 
 import javax.persistence.*;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 
 /**
  * Created by ashleymariecramer on 22/12/16.

@@ -87,7 +87,6 @@ public class SalvoController {
         return dto;
     }
 
-
     private Map<String, Object> makeShipDTO(Ship ship) {
         Map<String, Object> dto = new LinkedHashMap<String, Object>();
         dto.put("type", ship.getType());
