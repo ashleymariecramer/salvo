@@ -51,19 +51,15 @@ $(function() {
 
   //get data from JSON and create a new variable which contains the game Id, creation date and players and present this in a string
   function gameView(data) {
-         data.map(function(gameData) {
+//         data.map(function(gameData) {
             var game = {};
-            game.id = gameData.GameView.gameId;
-            game.created = new Date(gameData.GameView.created);
-            game.you = gameData.You.map(function(you) {
-                return you.player.nickname;
-            });
-            game.opp = gameData.Opponent.map(function(opp) {
-                return opp.player.nickname;
-            });
-         $("#output").html("<h2>" + "You (<b>" + game.you + "</b>) are playing against <b>" + game.opp + "</b></h2>" + "<h3><i>"+"Game: " + game.id +", Created on: " + game.created + "</i></h3>");
-
-     });
+            game.id = data.gameView.gameId;
+            game.created = new Date(data.gameView.created);
+            game.you = data.you.player.nickname;
+            game.opp = data.opponent.player.nickname;
+         $("#output").html("<h2>" + "You (<b>" + game.you + "</b>) are playing against <b>" + game.opp + "</b></h2>" +
+         "<h3><i>"+"Game: " + game.id +", Created on: " + game.created + "</i></h3>");
+//     });
     }
 
 //ajax call to the api to get the JSON data - if successful it uses data to draw the game view if not it returns an error
@@ -82,9 +78,9 @@ $(function() {
 
 //method to draw players own ships on their grid
   function findShipLocations(data){
-        for (var i = 0; i < data[0].YourShips.length; i++){
-            for (var j = 0; j < data[0].YourShips[i].locations.length; j++){
-                var location = data[0].YourShips[i].locations[j];
+        for (var i = 0; i < data.yourShips.length; i++){
+            for (var j = 0; j < data.yourShips[i].locations.length; j++){
+                var location = data.yourShips[i].locations[j];
                 $("#ownGrid > tr > td."+location).addClass("ship"); //only adds ships to own grid
 //                $("#ownGrid").children().children("."+location).addClass("ship"); //Alternative for >1 grids
                 }

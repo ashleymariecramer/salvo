@@ -59,29 +59,19 @@ public class SalvoController {
 
     //2. Game View based on gameplayerId
     @RequestMapping("/game_view/{gamePlayerId}")
-    public List<Object> getGamesbyPlayer(@PathVariable Long gamePlayerId){
-        return gpRepo.findAll().stream()  //loop through all gamePlayer repo to find data of gamePlayer with same id
-                .filter(gp -> gp.getId() == gamePlayerId) //only returns data which corresponds to the gamePlayer id in url
-                .map(gp -> makeGameViewDTO(gp, gamePlayerId)) //use a map to display only the data needed
-                .collect(toList()); //TODO: Don´t need this to be list as there's only one game - but not sure how to change it
+    public Map<String, Object> getGamesbyPlayer(@PathVariable Long gamePlayerId){
+        GamePlayer gamePlayer = gpRepo.findOne(gamePlayerId);
+        return makeGameViewDTO(gamePlayer, gamePlayerId);
     }
-
-//    public Long getCurrentPlayer(@PathVariable Long gamePlayerId){
-//        return gamePlayerId;
-//    }
 
 
     private Map<String, Object> makeGameViewDTO(GamePlayer gamePlayer, Long gamePlayerId) {
 
-        //TODO: YOU & OPPONENT details do not need to be inside a list - how to remove it  - get parallel:false error
         Map<String, Object> dto = new LinkedHashMap<String, Object>();
-            dto.put("GameView", makeGameDetailsDTO(gamePlayer.getGame()));
-//            dto.put("Game View", makeGameDTO(gamePlayer.getGame())); // Uses makeGame DTO but with only the game from the gamePlayer id
-//            dto.put("You", makePlayerDTO(gamePlayer.getPlayer())); // reuse the DTO for makePlayer from games api
-            dto.put("You", gamePlayer.getGame().getGamePlayers().stream().filter(gp -> gp.getId() == gamePlayerId).map(gp -> makeGamePlayerDTO(gp)).collect(toList()));
-            dto.put("YourShips", gamePlayer.getShip().stream().map(ship -> makeShipDTO(ship)).collect(toList()));
-            dto.put("Opponent", gamePlayer.getGame().getGamePlayers().stream().filter(gp -> gp.getId() != gamePlayerId).map(gp -> makeGamePlayerDTO(gp)).collect(toList()));
-        //here we need stream because there are more than one ship per game player
+            dto.put("gameView", makeGameDetailsDTO(gamePlayer.getGame()));
+            dto.put("you", gamePlayer.getGame().getGamePlayers().stream().filter(gp -> gp.getId() == gamePlayerId).findFirst().map(gp -> makeGamePlayerDTO(gp)).get());
+            dto.put("yourShips", gamePlayer.getShip().stream().map(ship -> makeShipDTO(ship)).collect(toList()));
+            dto.put("opponent", gamePlayer.getGame().getGamePlayers().stream().filter(gp -> gp.getId() != gamePlayerId).findFirst().map(gp -> makeGamePlayerDTO(gp)).get());
             return dto;
     }
 
