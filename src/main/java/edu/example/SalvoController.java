@@ -33,26 +33,37 @@ public class SalvoController {
     private Map<String, Object> makeGameDTO(Game game) {
 
         Map<String, Object> dto = new LinkedHashMap<String, Object>();
+        long gameId = game.getId();
         dto.put("gameId", game.getId());
         dto.put("created", game.getCreationDate());
-        dto.put("gamePlayers", game.getGamePlayers().stream().map(gamePlayer -> makeGamePlayerDTO(gamePlayer)).collect(toList()));
+//        dto.put("gameScores", game.getGameScores().stream().map(gameScore -> makeGameScoreDTO(gameScore)).collect(toList()));
+        dto.put("gamePlayers", game.getGamePlayers().stream().map(gamePlayer -> makeGamePlayerDTO(gamePlayer, gameId)).collect(toList()));
         //here we need stream because there are more than one game player per game
         return dto;
     }
 
-    private Map<String, Object> makeGamePlayerDTO(GamePlayer gamePlayer) {
+    private Map<String, Object> makeGamePlayerDTO(GamePlayer gamePlayer, long gameId) {
         Map<String, Object> dto = new LinkedHashMap<String, Object>();
         dto.put("gamePlayerId", gamePlayer.getId());
-        dto.put("player", makePlayerDTO(gamePlayer.getPlayer())); // don´t need to loop here cos a game player only has one player
+        dto.put("player", makePlayerDTO(gamePlayer.getPlayer(), gameId)); // don´t need to loop here cos a game player only has one player
         return dto;
     }
 
-    private Map<String, Object> makePlayerDTO(Player player) {
+    private Map<String, Object> makeGameScoreDTO(GameScore gameScore) {
+        Map<String, Object> dto = new LinkedHashMap<String, Object>();
+//        dto.put("gameScoreId", gameScore.getId());
+        dto.put("playerId", gameScore.getPlayer().getId());
+        dto.put("score", gameScore.getScore());
+        return dto;
+    }
+
+    private Map<String, Object> makePlayerDTO(Player player, long gameId) {
 
         Map<String, Object> dto = new LinkedHashMap<String, Object>();
         dto.put("playerId", player.getId());
         dto.put("username", player.getUsername());
         dto.put("nickname", player.getNickname());
+        dto.put("score", player.getGameScores().stream().filter(gs -> gs.getGame().getId() == gameId).findFirst().map(g -> g.getScore()).orElse(null));
         return dto;
     }
 
@@ -61,18 +72,19 @@ public class SalvoController {
     @RequestMapping("/game_view/{gamePlayerId}")
     public Map<String, Object> getGamesbyPlayer(@PathVariable Long gamePlayerId){
         GamePlayer gamePlayer = gpRepo.findOne(gamePlayerId);
-        return makeGameViewDTO(gamePlayer, gamePlayerId);
+        long gameId = gamePlayer.getGame().getId();
+        return makeGameViewDTO(gamePlayer, gamePlayerId, gameId);
     }
 
 
-    private Map<String, Object> makeGameViewDTO(GamePlayer gamePlayer, Long gamePlayerId) {
+    private Map<String, Object> makeGameViewDTO(GamePlayer gamePlayer, Long gamePlayerId, Long gameId) {
 
         Map<String, Object> dto = new LinkedHashMap<String, Object>();
             dto.put("gameView", makeGameDetailsDTO(gamePlayer.getGame()));
-            dto.put("you", gamePlayer.getGame().getGamePlayers().stream().filter(gp -> gp.getId() == gamePlayerId).findFirst().map(gp -> makeGamePlayerDTO(gp)).get());
+            dto.put("you", gamePlayer.getGame().getGamePlayers().stream().filter(gp -> gp.getId() == gamePlayerId).findFirst().map(gp -> makeGamePlayerDTO(gp, gameId)).get());
             dto.put("yourShips", gamePlayer.getShip().stream().map(ship -> makeShipDTO(ship)).collect(toList()));
             dto.put("yourSalvoes", gamePlayer.getGame().getGamePlayers().stream().filter(gp -> gp.getId() == gamePlayerId).findFirst().get().getSalvo().stream().map(salvo -> makeSalvoDTO(salvo)).collect(toList()));
-            dto.put("opponent", gamePlayer.getGame().getGamePlayers().stream().filter(gp -> gp.getId() != gamePlayerId).findFirst().map(gp -> makeGamePlayerDTO(gp)).get());
+            dto.put("opponent", gamePlayer.getGame().getGamePlayers().stream().filter(gp -> gp.getId() != gamePlayerId).findFirst().map(gp -> makeGamePlayerDTO(gp, gameId)).get());
             dto.put("opponentShips", gamePlayer.getGame().getGamePlayers().stream().filter(gp -> gp.getId() != gamePlayerId).findFirst().get().getShip().stream().map(ship -> makeShipDTO(ship)).collect(toList()));
             dto.put("opponentSalvoes", gamePlayer.getGame().getGamePlayers().stream().filter(gp -> gp.getId() != gamePlayerId).findFirst().get().getSalvo().stream().map(salvo -> makeSalvoDTO(salvo)).collect(toList()));
 

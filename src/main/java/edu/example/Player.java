@@ -50,6 +50,13 @@ public class Player {
         return id;
     }
 
+    public Set<GamePlayer> getGamePlayers() {
+        return gamePlayers;
+    }
+
+    public Set<GameScore> getGameScores() {
+        return gameScores;
+    }
 
 
 }
