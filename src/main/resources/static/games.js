@@ -22,7 +22,7 @@ $(function() {
             game.players = gameData.gamePlayers.map(function(gp) {
                 return gp.player.username;
             });
-            $("#output").append("<li>" + "Id: " + game.gameId + ", Created on: " + game.created + ", Players: " + game.players + "</li>");
+            $("#output").append("<li>" + "Game " + game.gameId + ": Created on: " + game.created + "<br>" + "Players: " + "<b>" + game.players + "</b>" + "</li>");
          });
   }
 

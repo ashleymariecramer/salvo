@@ -27,10 +27,10 @@ public class SalvoApplication {
 									  GameScoreRepository gameScoreRepo) {
 		return (args) -> {
 			// save a couple of customers
-			Player player1 = new Player("JB", "jack.bauer@hotmail.com");
-			Player player2 = new Player("Chloe", "chloe_o_brian@gmail.com");
-			Player player3 = new Player("Kimmie B", "kim.bauer@hotmail.com");
-			Player player4 = new Player("Almeida", "tony.almeida@ctu.gov");
+			Player player1 = new Player("JB", "jack.bauer@hotmail.com", "24");
+			Player player2 = new Player("Chloe", "chloe_o_brian@gmail.com", "42");
+			Player player3 = new Player("Kimmie B", "kim.bauer@hotmail.com", "kb");
+			Player player4 = new Player("Almeida", "tony.almeida@ctu.gov", "mole");
 			// save players to their repository
 			playerRepo.save(player1);
 			playerRepo.save(player2);
