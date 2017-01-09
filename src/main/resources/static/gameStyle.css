@@ -69,3 +69,11 @@ td{
     border: 1px solid DarkRed;
     color: DarkRed;
 }
+
+th{
+    text-align: center;
+}
+
+tbody{
+    color: white;
+}
