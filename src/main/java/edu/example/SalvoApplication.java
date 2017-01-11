@@ -1,11 +1,28 @@
 package edu.example;
 
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
+import org.springframework.security.config.annotation.authentication.configurers.GlobalAuthenticationConfigurerAdapter;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
+import org.springframework.security.core.authority.AuthorityUtils;
+import org.springframework.security.core.userdetails.User;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.web.WebAttributes;
+import org.springframework.security.web.authentication.logout.HttpStatusReturningLogoutSuccessHandler;
 
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
@@ -186,4 +203,95 @@ public class SalvoApplication {
 			gameScoreRepo.save(gameScore8);
 		};
 	}
+}
+
+
+@Configuration //Allows spring to find these classes even though they are not public
+class WebSecurityConfiguration extends GlobalAuthenticationConfigurerAdapter {
+////The job of this class is to job of this new class is to take the email entered at login
+//// and search the database to return a UserDetails object (if one exists)
+
+	@Autowired
+	PlayerRepository playerRepository;
+
+	@Override
+	public void init(AuthenticationManagerBuilder auth) throws Exception {
+		auth.userDetailsService(userDetailsService());
+	}
+
+	@Bean
+	UserDetailsService userDetailsService() {
+		return new UserDetailsService() {
+
+// changed findByEmail(name) to findByUsername(name) NB: name cannot be changed to email
+// This method looks up a user by name in your repository, and, if found, creates and returns a
+// org.springframework.security.core.userdetails.User object, with the stored user name, the stored password
+// for that user, and the role or roles that user has.
+ 			@Override
+			public UserDetails loadUserByUsername(String name) throws UsernameNotFoundException {
+              List<Player> players = playerRepository.findByUsername(name);
+				if (!players.isEmpty()) {
+					Player player = players.get(0);
+					return new User(player.getUsername(), player.getPassword(),
+							AuthorityUtils.createAuthorityList("USER"));
+							//only one role here = USER, to add multiple roles e.g., "INSTRUCTOR,STUDENT"
+ 							//use: AuthorityUtils.commaSeparatedStringToAuthorityList("INSTRUCTOR,STUDENT"));
+				} else {
+					throw new UsernameNotFoundException("Unknown user: " + name);
+				}
+			}
+		};
+	}
+}
+
+
+//Add in Configuration Security to define which authentication method is used & which pages are restricted to USERS
+@Configuration
+@EnableWebSecurity
+class WebSecurityConfig extends WebSecurityConfigurerAdapter {
+	@Override
+	protected void configure(HttpSecurity http) throws Exception {
+		http.authorizeRequests()
+//				//TODO: Check which pages should be seen by who - at present login for all, logout, games & game view for users
+ 				.antMatchers("/game_view**", "/api/logout", "/game.html").hasAuthority("USER")
+				.antMatchers("/rest/**" ).hasAuthority("ADMIN")
+// 				.antMatchers("/api/login").hasAuthority("GUEST") //TODO: check if necessary
+				.antMatchers("/api/login", "/games.html", "gameStyle.css", "games.js", "/api/scores",
+						"/api/games", "game.js" ).permitAll()//TODO: check if necessary
+				.and();
+		http.formLogin() //This shows it uses form-based authentication
+				 .usernameParameter("username") //have changed name to email
+				 .passwordParameter("password") //Nothing changed
+				 .loginPage("/api/login"); //changed from /app/logout to /api/logout
+
+		http.logout()
+				 .logoutUrl("/api/logout"); //changed from /app/logout to /api/logout
+
+
+//  This code disables the CSFR tokens - and
+		  //turn off checking for CSRF tokens
+		  http.csrf().disable();
+
+		  //This overrides default settings that send HTML forms when unauthenticated access happens and when someone logs in or out.
+		  // With these changes, Spring just sents HTTP success and response codes, no HTML pages.
+		  // if user is not authenticated, just send an authentication failure response
+		  http.exceptionHandling().authenticationEntryPoint((req, res, exc) -> res.sendError(HttpServletResponse.SC_UNAUTHORIZED));
+
+		  // if login is successful, just clear the flags asking for authentication
+		  http.formLogin().successHandler((req, res, auth) -> clearAuthenticationAttributes(req));
+
+		  // if login fails, just send an authentication failure response
+		  http.formLogin().failureHandler((req, res, exc) -> res.sendError(HttpServletResponse.SC_UNAUTHORIZED));
+
+		  // if logout is successful, just send a success response
+		  http.logout().logoutSuccessHandler(new HttpStatusReturningLogoutSuccessHandler());
+		  }
+//TODO: check what this is for and if changes are required
+	private void clearAuthenticationAttributes(HttpServletRequest request) {
+			HttpSession session = request.getSession(false);
+			if (session != null) {
+			session.removeAttribute(WebAttributes.AUTHENTICATION_EXCEPTION);
+			}
+
+		}
 }
