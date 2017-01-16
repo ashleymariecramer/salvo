@@ -1,6 +1,11 @@
 package edu.example;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.authentication.AbstractAuthenticationToken;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -29,41 +34,53 @@ public class SalvoController {
     //this injects an instance of the class PlayerRepository for use by this controller (Dependency Injection)
     private PlayerRepository pRepo;
 
+// This gives the username (email of the logged in player)
+//    private String getUserName(Authentication authentication) {
+//        String details = authentication.getName();
+//        return details; /
+//    }
 
-    //1. List of Games
-    @RequestMapping("/games")
+    //1. List of Games by Logged in player
+   @RequestMapping("/games")
 
-    public List<Object> getAllGames() {
-        return repo.findAll().stream().map(game -> makeGameDTO(game)).collect(toList());
+    public Map<String, Object> getUserGames(Authentication authentication) {
+       Player loggedInUser = pRepo.findByUsername(authentication.getName());
+       if (loggedInUser != null) {
+           return makeUserDTO(loggedInUser);
+       }
+       else { //TODO: this is not getting triggered - Why?
+           return makeNullUserDTO(); //this returns { "player": null, "games": null } which is good
+       }
+
     }
 
-    private Map<String, Object> makeGameDTO(Game game) {
+    private Map<String, Object> makeNullUserDTO() {
         Map<String, Object> dto = new LinkedHashMap<String, Object>();
-        long gameId = game.getId();
-        dto.put("gameId", game.getId());
-        dto.put("created", game.getCreationDate());
-        dto.put("gamePlayers", game.getGamePlayers().stream().map(gamePlayer -> makeGamePlayerDTO(gamePlayer, gameId)).collect(toList()));
-        //here we need stream because there are more than one game player per game
+        dto.put("player", null);
+        dto.put("games", null);
         return dto;
     }
 
-    private Map<String, Object> makeGamePlayerDTO(GamePlayer gamePlayer, long gameId) {
+
+
+
+    private Map<String, Object> makeUserDTO(Player player) {
         Map<String, Object> dto = new LinkedHashMap<String, Object>();
-        dto.put("gamePlayerId", gamePlayer.getId());
-        dto.put("player", makePlayerDTO(gamePlayer.getPlayer(), gameId)); // don´t need to loop here cos a game player only has one player
+        dto.put("player", makeUserDetailsDTO(player)); // don´t need to loop here cos a game player only has one player
+        dto.put("games", player.getGameScores().stream().map(gs -> gs.getGame().getId()).collect(toList()));
         return dto;
     }
 
 
-    private Map<String, Object> makePlayerDTO(Player player, long gameId) {
+    private Map<String, Object> makeUserDetailsDTO(Player player) {
         Map<String, Object> dto = new LinkedHashMap<String, Object>();
-        dto.put("playerId", player.getId());
+        dto.put("playerId", player.getId()); //TODO: this the id we want to filter by
         dto.put("username", player.getUsername());
         dto.put("nickname", player.getNickname());
-        dto.put("score", player.getGameScores().stream().filter(gs -> gs.getGame().getId() == gameId).findFirst().map(g -> g.getScore()).orElse(null));
-        //adding score here makes it clear who the score belongs to
         return dto;
     }
+
+
 
 
 
@@ -94,6 +111,24 @@ public class SalvoController {
         Map<String, Object> dto = new LinkedHashMap<String, Object>();
         dto.put("gameId", game.getId());
         dto.put("created", game.getCreationDate());
+        return dto;
+    }
+
+    private Map<String, Object> makeGamePlayerDTO(GamePlayer gamePlayer, long gameId) {
+        Map<String, Object> dto = new LinkedHashMap<String, Object>();
+        dto.put("gamePlayerId", gamePlayer.getId());
+        dto.put("player", makePlayerDTO(gamePlayer.getPlayer(), gameId)); // don´t need to loop here cos a game player only has one player
+        return dto;
+    }
+
+
+    private Map<String, Object> makePlayerDTO(Player player, long gameId) {
+        Map<String, Object> dto = new LinkedHashMap<String, Object>();
+        dto.put("playerId", player.getId());
+        dto.put("username", player.getUsername());
+        dto.put("nickname", player.getNickname());
+        dto.put("score", player.getGameScores().stream().filter(gs -> gs.getGame().getId() == gameId).findFirst().map(g -> g.getScore()).orElse(null));
+        //adding score here makes it clear who the score belongs to
         return dto;
     }
 
@@ -203,6 +238,7 @@ public class SalvoController {
             return "tied";
         }
     }
+
 
 
 } //Do not delete!! End of function

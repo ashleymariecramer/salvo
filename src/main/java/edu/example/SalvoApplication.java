@@ -23,9 +23,7 @@ import org.springframework.security.web.authentication.logout.HttpStatusReturnin
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Date;
 import java.util.List;
 
 @SpringBootApplication //This is needed to use SpringBoot
@@ -208,7 +206,7 @@ public class SalvoApplication {
 
 @Configuration //Allows spring to find these classes even though they are not public
 class WebSecurityConfiguration extends GlobalAuthenticationConfigurerAdapter {
-////The job of this class is to job of this new class is to take the email entered at login
+////The job of this new class is to take the email entered at login
 //// and search the database to return a UserDetails object (if one exists)
 
 	@Autowired
@@ -229,7 +227,7 @@ class WebSecurityConfiguration extends GlobalAuthenticationConfigurerAdapter {
 // for that user, and the role or roles that user has.
  			@Override
 			public UserDetails loadUserByUsername(String name) throws UsernameNotFoundException {
-              List<Player> players = playerRepository.findByUsername(name);
+              List<Player> players = playerRepository.findPlayersByUsername(name);
 				if (!players.isEmpty()) {
 					Player player = players.get(0);
 					return new User(player.getUsername(), player.getPassword(),
@@ -251,22 +249,23 @@ class WebSecurityConfiguration extends GlobalAuthenticationConfigurerAdapter {
 class WebSecurityConfig extends WebSecurityConfigurerAdapter {
 	@Override
 	protected void configure(HttpSecurity http) throws Exception {
-		http.authorizeRequests()
-//				//TODO: Check which pages should be seen by who - at present login for all, logout, games & game view for users
- 				.antMatchers("/game_view**", "/api/logout", "/game.html").hasAuthority("USER")
-				.antMatchers("/rest/**" ).hasAuthority("ADMIN")
-// 				.antMatchers("/api/login").hasAuthority("GUEST") //TODO: check if necessary
-				.antMatchers("/api/login", "/games.html", "gameStyle.css", "games.js", "/api/scores",
-						"/api/games", "game.js" ).permitAll()//TODO: check if necessary
-				.and();
-		http.formLogin() //This shows it uses form-based authentication
-				 .usernameParameter("username") //have changed name to email
-				 .passwordParameter("password") //Nothing changed
-				 .loginPage("/api/login"); //changed from /app/logout to /api/logout
-
-		http.logout()
-				 .logoutUrl("/api/logout"); //changed from /app/logout to /api/logout
-
+		http
+			.authorizeRequests()
+ 				.antMatchers("/game_view**", "/game.html").hasAuthority("USER")
+//				.antMatchers("/rest/**" ).hasAuthority("ADMIN") //TODO: change this back after testing uncommenthere & removes from permitALL
+// 				.antMatchers("/api/login").hasAuthority("GUEST")
+				.antMatchers("/games.html", "gameStyle.css", "games.js", "/api/scores",
+						"/api/games", "game.js", "/api/login", "/api/logout", "/rest/**" ).permitAll()//For pages that can be seen by all
+				.and()
+			.formLogin() //This shows it uses form-based authentication
+				.usernameParameter("username") //have changed name to email
+				.passwordParameter("password") //Nothing changed
+				.loginPage("/api/login") // TODO: should this be here or in antMatchers above?
+				.permitAll() //TODO: is it better to add this here or within authorize requests?
+				.and()
+				.logout()
+				.logoutUrl("/api/logout") //changed from /app/logout to /api/logout
+				.permitAll(); //TODO: should this be for all or not?
 
 //  This code disables the CSFR tokens - and
 		  //turn off checking for CSRF tokens
@@ -286,7 +285,7 @@ class WebSecurityConfig extends WebSecurityConfigurerAdapter {
 		  // if logout is successful, just send a success response
 		  http.logout().logoutSuccessHandler(new HttpStatusReturningLogoutSuccessHandler());
 		  }
-//TODO: check what this is for and if changes are required
+//This is a utility function, defined to remove the flag Spring sets when an unauthenticated user attempts to access some resource.
 	private void clearAuthenticationAttributes(HttpServletRequest request) {
 			HttpSession session = request.getSession(false);
 			if (session != null) {

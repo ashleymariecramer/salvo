@@ -77,3 +77,11 @@ th{
 tbody{
     color: white;
 }
+
+.games{
+width: 100px;
+}
+
+#output{
+text-align: center;
+}

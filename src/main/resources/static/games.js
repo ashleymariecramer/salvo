@@ -13,18 +13,27 @@ $(function() {
         $("#leaderBoard").text(text);
     }
 
-  //get data from JSON and create a new variable which contains the game Id, creation date and players and present this in a string
+  //get data from JSON and create a new variable which contains the logged in player's name & their games.
   function gamesMap(data) {
-         data.map(function(gameData) {
-            var game = {};
-            game.gameId = gameData.gameId;
-            game.created = new Date(gameData.created);
-            game.players = gameData.gamePlayers.map(function(gp) {
-                return gp.player.username;
-            });
-            $("#output").append("<li>" + "Game " + game.gameId + ": Created on: " + game.created + "<br>" + "Players: " + "<b>" + game.players + "</b>" + "</li>");
-         });
+        $("#output").append("<h3>" + "Hi there " + "<b>" + data.player.nickname + "</b>" + "</h3>");
+        $("#output").append("<h4>" + "Here are your games: ");
+        for (var i = 0; i < data.games.length; i++){
+            $("#output").append("<button class='games'>" + data.games[i] + "</button>");
+        }
+
   }
+
+//    function gamesMap(data) {
+//           data.map(function(gameData) {
+//              var game = {};
+//              game.gameId = gameData.gameId;
+//              game.created = new Date(gameData.created);
+//              game.players = gameData.gamePlayers.map(function(gp) {
+//                  return gp.player.username;
+//              });
+//              $("#output").append("<li>" + "Game " + game.gameId + ": Created on: " + game.created + "<br>" + "Players: " + "<b>" + game.players + "</b>" + "</li>");
+//           });
+//    }
 
 //ajax call to the api to get the JSON data - if successful it uses data to draw a list of games if not it returns an error
   function loadGameData() {
@@ -77,13 +86,48 @@ $(function() {
 //    $.post("/login",
 //           { username: form["username"].value,
 //             password: form["password"].value })
-//     .done(...)
-//     .fail(...);
+//     .done(...) //TODO: need to define what happens on successful login eg. 'Welcome "name"' or '"name" is logged in.'
+//     .fail(...); /TODO: need to define what happens if login fails
 //  }
+
+////possible option for failed login - redirects to login page:
+//.fail(function (jqXHR, textStatus, errorThrown) {
+//   if (jqXHR.status === 401) { // HTTP Status 401: Unauthorized
+//            var preLoginInfo = JSON.stringify({method: 'GET', url: '/'});
+//            $.cookie('restsecurity.pre.login.request', preLoginInfo);
+//            window.location = '/api/login.html';
+//
+//        } else {
+//            alert('Houston, we have a problem...');
+//        }
+// }
 //
 //  function logout(evt) {
 //    evt.preventDefault();
-//    $.post("/logout)
-//     .done(...)
-//     .fail(...);
+//    $.post("/api/logout)
+//     .done(...) //TODO: need to define what happens on successful logout. 'You are currently logged out"
+//     .fail(...); //TODO: need to define what happens if logout fails
 //  }
+
+
+
+//Code for handling submission process of the login form
+//jQuery(document).ready(function ($) {
+//    $('#loginform').submit(function (event) {
+//        event.preventDefault();
+//        var data = 'username=' + $('#username').val() + '&password=' + $('#password').val();
+//        $.ajax({
+//            data: data,
+//            timeout: 1000,
+//            type: 'POST',
+//            url: '/api/login'
+//
+//        }).done(function(data, textStatus, jqXHR) {
+//            var preLoginInfo = JSON.parse($.cookie('dashboard.pre.login.request'));
+//            window.location = preLoginInfo.url;
+//
+//        }).fail(function(jqXHR, textStatus, errorThrown) {
+//            alert('Booh! Wrong credentials, try again!');
+//        });
+//    });
+//});
