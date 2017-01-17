@@ -8,6 +8,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.*;
@@ -41,28 +42,72 @@ public class SalvoController {
 //    }
 
     //1. List of Games by Logged in player
-   @RequestMapping("/games")
 
-    public Map<String, Object> getUserGames(Authentication authentication) {
-       Player loggedInUser = pRepo.findByUsername(authentication.getName());
-       if (loggedInUser != null) {
-           return makeUserDTO(loggedInUser);
-       }
-       else { //TODO: this is not getting triggered - Why?
-           return makeNullUserDTO(); //this returns { "player": null, "games": null } which is good
-       }
+    //TODO: Add back in the code to return all the games - then add in the check if its not guest user then we should also add in
+    //TODO: the code to get current user info and games buttons
 
+//    @RequestMapping("/games")
+//
+//    public List<Object> getAllGames() {
+//        return repo.findAll().stream().map(game -> makeGameDTO(game)).collect(toList());
+//    }
+//
+
+    @RequestMapping(path = "/games", method = RequestMethod.GET)
+    public List<Object> getAllGames() {
+        return repo.findAll().stream().map(game -> makeGameDTO(game)).collect(toList());
     }
 
-    private Map<String, Object> makeNullUserDTO() {
+    private Map<String, Object> makeGameDTO(Game game) {
         Map<String, Object> dto = new LinkedHashMap<String, Object>();
-        dto.put("player", null);
-        dto.put("games", null);
+        long gameId = game.getId();
+        dto.put("gameId", game.getId());
+        dto.put("created", game.getCreationDate());
+        dto.put("gamePlayers", game.getGamePlayers().stream().map(gamePlayer -> makeGamePlayerDTO(gamePlayer, gameId)).collect(toList()));
+        //here we need stream because there are more than one game player per game
+        return dto;
+    }
+
+    private Map<String, Object> makeGamePlayerDTO(GamePlayer gamePlayer, long gameId) {
+        Map<String, Object> dto = new LinkedHashMap<String, Object>();
+        dto.put("gamePlayerId", gamePlayer.getId());
+        dto.put("player", makePlayerDTO(gamePlayer.getPlayer(), gameId)); // don´t need to loop here cos a game player only has one player
         return dto;
     }
 
 
+    private Map<String, Object> makePlayerDTO(Player player, long gameId) {
+        Map<String, Object> dto = new LinkedHashMap<String, Object>();
+        dto.put("playerId", player.getId());
+        dto.put("username", player.getUsername());
+        dto.put("nickname", player.getNickname());
+        dto.put("score", player.getGameScores().stream().filter(gs -> gs.getGame().getId() == gameId).findFirst().map(g -> g.getScore()).orElse(null));
+        //adding score here makes it clear who the score belongs to
+        return dto;
+    }
 
+    @RequestMapping(path = "/currentUserGames", method = RequestMethod.GET)
+    public Map<String, Object> getUserGames(Authentication authentication) {
+       if (!isGuest(authentication)) { //This checks there is not a guest user
+           Player loggedInUser = pRepo.findByUsername(authentication.getName());
+           return makeUserDTO(loggedInUser);
+       }
+       else{
+           return makeGuestUserDTO();
+       }
+    }
+
+
+    private boolean isGuest(Authentication authentication) {
+        return authentication == null || authentication instanceof AnonymousAuthenticationToken;
+        //this checks if authentication is null or is an instance the predefined spring security class "AnonymousAuthenticationToken"
+    }
+
+    private Map<String, Object> makeGuestUserDTO() {
+        Map<String, Object> dto = new LinkedHashMap<String, Object>();
+        dto.put("player", "guest");
+        return dto;
+    }
 
     private Map<String, Object> makeUserDTO(Player player) {
         Map<String, Object> dto = new LinkedHashMap<String, Object>();
@@ -71,16 +116,13 @@ public class SalvoController {
         return dto;
     }
 
-
     private Map<String, Object> makeUserDetailsDTO(Player player) {
         Map<String, Object> dto = new LinkedHashMap<String, Object>();
-        dto.put("playerId", player.getId()); //TODO: this the id we want to filter by
+        dto.put("playerId", player.getId());
         dto.put("username", player.getUsername());
         dto.put("nickname", player.getNickname());
         return dto;
     }
-
-
 
 
 
@@ -114,23 +156,23 @@ public class SalvoController {
         return dto;
     }
 
-    private Map<String, Object> makeGamePlayerDTO(GamePlayer gamePlayer, long gameId) {
-        Map<String, Object> dto = new LinkedHashMap<String, Object>();
-        dto.put("gamePlayerId", gamePlayer.getId());
-        dto.put("player", makePlayerDTO(gamePlayer.getPlayer(), gameId)); // don´t need to loop here cos a game player only has one player
-        return dto;
-    }
-
-
-    private Map<String, Object> makePlayerDTO(Player player, long gameId) {
-        Map<String, Object> dto = new LinkedHashMap<String, Object>();
-        dto.put("playerId", player.getId());
-        dto.put("username", player.getUsername());
-        dto.put("nickname", player.getNickname());
-        dto.put("score", player.getGameScores().stream().filter(gs -> gs.getGame().getId() == gameId).findFirst().map(g -> g.getScore()).orElse(null));
-        //adding score here makes it clear who the score belongs to
-        return dto;
-    }
+//    private Map<String, Object> makeGamePlayerDTO(GamePlayer gamePlayer, long gameId) {
+//        Map<String, Object> dto = new LinkedHashMap<String, Object>();
+//        dto.put("gamePlayerId", gamePlayer.getId());
+//        dto.put("player", makePlayerDTO(gamePlayer.getPlayer(), gameId)); // don´t need to loop here cos a game player only has one player
+//        return dto;
+//    }
+//
+//
+//    private Map<String, Object> makePlayerDTO(Player player, long gameId) {
+//        Map<String, Object> dto = new LinkedHashMap<String, Object>();
+//        dto.put("playerId", player.getId());
+//        dto.put("username", player.getUsername());
+//        dto.put("nickname", player.getNickname());
+//        dto.put("score", player.getGameScores().stream().filter(gs -> gs.getGame().getId() == gameId).findFirst().map(g -> g.getScore()).orElse(null));
+//        //adding score here makes it clear who the score belongs to
+//        return dto;
+//    }
 
     private Map<String, Object> makeShipDTO(Ship ship) {
         Map<String, Object> dto = new LinkedHashMap<String, Object>();
@@ -239,6 +281,24 @@ public class SalvoController {
         }
     }
 
-
+    //3. Create new players
+//    @RequestMapping("/players")
+// method takes 2 parameters: username(email) and password
+// Check if existing player exists with same username:
+    // pRepo.findByUsername(username* from login form);
+    //can just put above in a conditional maybe
+// If so, return a ResponseEntity with the 403 Forbidden HTTP status code.
+// It should also include a JSON object describing the reason, e.g.,
+// Map<String,String>{ "error": "Name in use" }.
+//    If there is no problem, the method should save the new Player in the repository and return  201 code
+// and a JSON object with the player's name
+//    String username
+//
+//
+//            createUser(username, password){
+//
+//    }
+//
+//            $.post("/api/players", { username: "j.bauer@ctu.gov", password: "1234" })
 
 } //Do not delete!! End of function

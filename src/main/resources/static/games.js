@@ -1,8 +1,9 @@
 $(function() {
 
 //Main functions:
+   loadCurrentUser();
    loadGameData();
-   loadLeaderBoard()
+   loadLeaderBoard();
 });
 
 //Auxiliary Functions
@@ -11,29 +12,20 @@ $(function() {
   function showOutput(text) {
         $("#output").text(text);
         $("#leaderBoard").text(text);
+        $("#currentUser").text(text);
     }
 
-  //get data from JSON and create a new variable which contains the logged in player's name & their games.
-  function gamesMap(data) {
-        $("#output").append("<h3>" + "Hi there " + "<b>" + data.player.nickname + "</b>" + "</h3>");
-        $("#output").append("<h4>" + "Here are your games: ");
-        for (var i = 0; i < data.games.length; i++){
-            $("#output").append("<button class='games'>" + data.games[i] + "</button>");
-        }
 
+//ajax call to the api to get the JSON data - if successful it uses data to draw a list of games if not it returns an error
+  function loadCurrentUser() {
+    $.getJSON("/api/currentUserGames")
+    .done(function(data) {
+          loggedInUserMap(data);
+          })
+    .fail(function( jqXHR, textStatus ) {
+      showOutput( "Failed: " + textStatus );
+    });
   }
-
-//    function gamesMap(data) {
-//           data.map(function(gameData) {
-//              var game = {};
-//              game.gameId = gameData.gameId;
-//              game.created = new Date(gameData.created);
-//              game.players = gameData.gamePlayers.map(function(gp) {
-//                  return gp.player.username;
-//              });
-//              $("#output").append("<li>" + "Game " + game.gameId + ": Created on: " + game.created + "<br>" + "Players: " + "<b>" + game.players + "</b>" + "</li>");
-//           });
-//    }
 
 //ajax call to the api to get the JSON data - if successful it uses data to draw a list of games if not it returns an error
   function loadGameData() {
@@ -57,6 +49,33 @@ $(function() {
       });
     }
 
+  //get data from JSON and create a new variable which contains the logged in player's name & their games.
+  function loggedInUserMap(data) {
+        if (data.player == "guest"){
+            $("#currentUser").append("<h3 class='warning'>" + "Log in to see the games you are playing in" + "</h3>");
+        }
+        else{
+            $("#currentUser").append("<h2>" + "Hi there " + "<b>" + data.player.nickname + "</b>" + "</h2>");
+                    $("#currentUser").append("<h4>" + "Here are your games: ");
+                    for (var i = 0; i < data.games.length; i++){
+                        $("#currentUser").append("<button class='games'>" + data.games[i] + "</button>");
+                    }
+        }
+
+  }
+
+  //get data from JSON and list of all games with game id, creation date, players emails
+    function gamesMap(data) {
+           data.map(function(gameData) {
+              var game = {};
+              game.gameId = gameData.gameId;
+              game.created = new Date(gameData.created);
+              game.players = gameData.gamePlayers.map(function(gp) {
+                  return gp.player.username;
+              });
+              $("#output").append("<li>" + "Game " + game.gameId + ": Created on: " + game.created + "<br>" + "Players: " + "<b>" + game.players + "</b>" + "</li>");
+           });
+    }
 
   //get data from JSON and create a new variable which contains the game Id, creation date and players and present this in a string
   function scoresMap(data) {

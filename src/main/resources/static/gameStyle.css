@@ -85,3 +85,7 @@ width: 100px;
 #output{
 text-align: center;
 }
+
+.warning{
+color: red;
+}

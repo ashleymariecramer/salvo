@@ -255,13 +255,13 @@ class WebSecurityConfig extends WebSecurityConfigurerAdapter {
 //				.antMatchers("/rest/**" ).hasAuthority("ADMIN") //TODO: change this back after testing uncommenthere & removes from permitALL
 // 				.antMatchers("/api/login").hasAuthority("GUEST")
 				.antMatchers("/games.html", "gameStyle.css", "games.js", "/api/scores",
-						"/api/games", "game.js", "/api/login", "/api/logout", "/rest/**" ).permitAll()//For pages that can be seen by all
+						"/api/games", "game.js", "/api/logout", "/rest/**" ).permitAll()//For pages that can be seen by all
 				.and()
 			.formLogin() //This shows it uses form-based authentication
 				.usernameParameter("username") //have changed name to email
 				.passwordParameter("password") //Nothing changed
 				.loginPage("/api/login") // TODO: should this be here or in antMatchers above?
-				.permitAll() //TODO: is it better to add this here or within authorize requests?
+//				.permitAll() //TODO: is it better to add this here or within authorize requests?
 				.and()
 				.logout()
 				.logoutUrl("/api/logout") //changed from /app/logout to /api/logout
