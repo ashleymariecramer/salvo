@@ -6,7 +6,26 @@ $(function() {
 
 });
 
-//Auxiliary functions
+
+//  ***  On event functions  ***  //
+
+  //** Logout **
+    $("#logout_button").click(function(evt) {
+    evt.preventDefault(); //ASK: Is this necessary - doesn't seem to do anything????
+    var form = evt.target.form; //this is needed later to gets the values from the form
+    $.post("/api/logout")
+     .done(function() {
+        console.log("logged out!"); //to check login has worked
+        //window.location.replace("/games.html");
+        $(location).attr('href', '/games.html'); //Takes logged out user back to games page
+        })
+     .fail(function() {
+          alert('Booh! Something went wrong with the logout. Please try again!');
+      })
+  });
+
+
+//  ***   Auxiliary functions   ***  //
 
 //builds a 11 x 11 grid where each cell has a unique id identifying it.
 //in this same method I can also add key or board class and only show text for key class
@@ -32,12 +51,14 @@ $(function() {
     }
     document.getElementById("ownGrid").innerHTML += rows.join("");
     document.getElementById("opponentGrid").innerHTML += rows.join("");
+    $("#logout_form").show(); //shows logout button
 
   }
 
 
   // This gets the gp query value from the url. document.location.search gives the query e.g. "?gp=1"
   // document.location.search.substr(1) returns the parameter & its value without the & e.g. "gp=1"
+  //TODO: need to changes this to get game player from game number and username the same as logged in
   function getGamePlayerIdFromURL(){
       var query = document.location.search.substr(1).split('=') //e.g. takes "gp=1" & splits into ["gp", "1"]
       var gp = query[1];

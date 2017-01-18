@@ -231,7 +231,7 @@ class WebSecurityConfiguration extends GlobalAuthenticationConfigurerAdapter {
 				if (!players.isEmpty()) {
 					Player player = players.get(0);
 					return new User(player.getUsername(), player.getPassword(),
-							AuthorityUtils.createAuthorityList("USER"));
+							AuthorityUtils.commaSeparatedStringToAuthorityList("USER,ADMIN"));
 							//only one role here = USER, to add multiple roles e.g., "INSTRUCTOR,STUDENT"
  							//use: AuthorityUtils.commaSeparatedStringToAuthorityList("INSTRUCTOR,STUDENT"));
 				} else {
@@ -251,21 +251,20 @@ class WebSecurityConfig extends WebSecurityConfigurerAdapter {
 	protected void configure(HttpSecurity http) throws Exception {
 		http
 			.authorizeRequests()
- 				.antMatchers("/game_view**", "/game.html").hasAuthority("USER")
-//				.antMatchers("/rest/**" ).hasAuthority("ADMIN") //TODO: change this back after testing uncommenthere & removes from permitALL
-// 				.antMatchers("/api/login").hasAuthority("GUEST")
+ 				.antMatchers("/game.html").hasAuthority("USER")
+//				.antMatchers("/rest/**" ).hasAuthority("ADMIN") //TODO: change this back after testing uncomment here & removes from permitALL
 				.antMatchers("/games.html", "gameStyle.css", "games.js", "/api/scores",
-						"/api/games", "game.js", "/api/logout", "/rest/**" ).permitAll()//For pages that can be seen by all
+						"/api/games", "game.js", "/api/logout", "/rest/**", "/game_view/**", "game_view" ).permitAll()//For pages that can be seen by all
 				.and()
 			.formLogin() //This shows it uses form-based authentication
 				.usernameParameter("username") //have changed name to email
 				.passwordParameter("password") //Nothing changed
-				.loginPage("/api/login") // TODO: should this be here or in antMatchers above?
-//				.permitAll() //TODO: is it better to add this here or within authorize requests?
+				.loginPage("/api/login")
+				.permitAll() // technically not needed but logical to have it here
 				.and()
 				.logout()
-				.logoutUrl("/api/logout") //changed from /app/logout to /api/logout
-				.permitAll(); //TODO: should this be for all or not?
+				.logoutUrl("/api/logout")
+				.permitAll(); // technically not needed but logical to have it here
 
 //  This code disables the CSFR tokens - and
 		  //turn off checking for CSRF tokens

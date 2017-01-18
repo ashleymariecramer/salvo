@@ -4,6 +4,9 @@
 
 package edu.example;
 
+import org.hibernate.validator.constraints.Email;
+import org.hibernate.validator.constraints.NotEmpty;
+
 import javax.persistence.*;
 import java.util.Set;
 
@@ -14,8 +17,12 @@ public class Player {
     @Id // id instance variable holds the database key for this class.
     @GeneratedValue(strategy=GenerationType.AUTO) // tells JPA to get the ID from the DBMS.
     private long id;
+    @NotEmpty (message = "Please enter a nickname") //Ask: How do I get these messages to show?
     private String nickname;
+    @NotEmpty (message = "Please enter a username")
+    @Email (message = "Please enter valid email address") //Ask: only seems to validate if there is an '@' symbol
     private String username;
+    @NotEmpty (message = "Please enter a password")
     private String password;
     @OneToMany(mappedBy="player", fetch= FetchType.EAGER)
     private Set<GamePlayer> gamePlayers;
@@ -32,20 +39,25 @@ public class Player {
     }
 
     // ---------------------Methods(public)----------------------------------
-    public void setNickname(String firstName) {
-        this.nickname = firstName;
-    }
+// Double validation - in Javascript & JAVA - checks nickname, username and password are not empty @Empty
+// and also that the username has a correct email format @Email
+// Can put these validation annotations either in the getters or in properties (above)
 
     public String getNickname() {
         return nickname;
     }
 
-    public void setUsername(String email) {
-        this.username = email;
+    public void setNickname(String firstName) {
+        this.nickname = firstName;
     }
 
+    @Email (message = "Please enter valid email address")
     public String getUsername() {
         return username;
+    }
+
+    public void setUsername(String email) {
+        this.username = email;
     }
 
     public String getPassword() {

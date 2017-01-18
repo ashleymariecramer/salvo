@@ -10,24 +10,44 @@
 
 
     <div class="container">
-        <h1 id="currentUser">BATTLESHIP</h1>
+        <!--TODO: code to be added for login - keeping username but changed label titles -->
+        <form id="login_form" name="login_form" onsubmit="return false">
+            <label>Username: <input type="text" name="username"></label>
+            <label>Password: <input type="password" name="password"></label> <!-- password type keeps text entered hidden -->
+            <button id="login_button" type="submit">Login!</button>
+            Not yet created your own account? <button id="create_account_button" type="submit">Sign up!</button>
+        </form>
 
-        <h2>All Salvo Games</h2>
-        <ol id="output">
-        </ol>
+        <form id="logout_form" name="logout_form" onsubmit="return false">
+            <button id="logout_button" type="submit">Log out</button>
+        </form>
+
+        <form id="signup_form" name="signup_form" onsubmit="return false">
+            <label>Nickname(What should we call you?): <input type="text" name="nickname"></label>
+            <label>Username(email address): <input type="email" name="username"></label>
+            <label>Password: <input type="text" name="password"></label>
+            <button id="signup_button" type="submit" type="submit">Sign up!</button>
+        </form>
+
+        <h1 id="currentUser">BATTLESHIP</h1>
 
         <h2>Leader Board</h2>
         <table class="table">
             <thead>
-                <th>Name</th>
-                <th>Total Score</th>
-                <th>Won</th>
-                <th>Lost</th>
-                <th>Tied</th>
+            <th>Name</th>
+            <th>Total Score</th>
+            <th>Won</th>
+            <th>Lost</th>
+            <th>Tied</th>
             </thead>
             <tbody id="leaderBoard">
             </tbody>
         </table>
+
+        <h2>All Salvo Games</h2>
+        <ul id="output">
+        </ul>
+
     </div>
 
 
@@ -39,20 +59,3 @@
 </html>
 
 
-<!--TODO: code to be added for login - keeping username but changed label titles
-<form id="login-form" onsubmit="return false">
-    <label>Username(email address): <input type="text" name="username"></label>
-    <label>Password: <input type="text" name="password"></label>
-</form>
-
-<form id="logout-form" onsubmit="return false">
-    <button>Log out</button>
-</form>
-
-
-OR <form id="loginform" name="loginform">
-    <label for="username">Username: </label><input id="username" name="username"><br/>
-    <label for="password">Password:</label><input id="password" name="password"><br/>
-    <button type="submit">Login!</button>
-</form>
--->

@@ -89,3 +89,11 @@ text-align: center;
 .warning{
 color: red;
 }
+
+#logout_form{
+display: none;
+}
+
+#signup_form{
+display: none;
+}

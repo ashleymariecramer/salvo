@@ -1,19 +1,18 @@
 package edu.example;
 
+import org.hibernate.validator.constraints.Email;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.authentication.AbstractAuthenticationToken;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
+import javax.validation.Valid;
 import java.util.*;
 
 import static java.util.stream.Collectors.toList;
-import static java.util.stream.Collectors.toSet;
 
 /**
  * Created by ashleymariecramer on 14/12/16.
@@ -99,7 +98,10 @@ public class SalvoController {
     private Map<String, Object> makeUserDTO(Player player) {
         Map<String, Object> dto = new LinkedHashMap<String, Object>();
         dto.put("player", makeUserDetailsDTO(player)); // don´t need to loop here cos a game player only has one player
-        dto.put("games", player.getGameScores().stream().map(gs -> gs.getGame().getId()).collect(toList()));
+//        dto.put("games", player.getGameScores().stream().map(gs -> gs.getGame().getId()).collect(toList()));
+        dto.put("games", makePlayersGameDetailsDTO(player));
+
+
         return dto;
     }
 
@@ -111,7 +113,12 @@ public class SalvoController {
         return dto;
     }
 
-
+    private Map<String, Object> makePlayersGameDetailsDTO(Player player) {
+        Map<String, Object> dto = new LinkedHashMap<String, Object>();
+        dto.put("gameId", player.getGameScores().stream().map(gs -> gs.getGame().getId()).collect(toList()));
+        dto.put("gamePlayerIds", player.getGamePlayers().stream().map(gp -> gp.getId()).collect(toList()));
+        return dto;
+    }
 
     //3. Game View based on gameplayerId
     @RequestMapping("/game_view/{gamePlayerId}")
@@ -254,16 +261,17 @@ public class SalvoController {
     //Because some of the conditions have to return a Map ResponseEntity<Map<String,Object>> then all of them have to
     //@RequestParam is necessary before each parameter
     @RequestMapping(path = "/players", method = RequestMethod.POST)
-    public ResponseEntity<Map<String,Object>>createPlayer(@RequestParam String nickname, @RequestParam String username, @RequestParam String password) {
-
+    public ResponseEntity<Map<String,Object>>createPlayer(@RequestParam String nickname,
+                                                          @RequestParam @Email String username,
+                                                          @RequestParam String password){
         Player player = pRepo.findByUsername(username); //gives a 409 Conflict Error
         if (player != null) {
-            return new ResponseEntity<Map<String,Object>>(makeMap("error", "Username(email) already in use"), HttpStatus.CONFLICT);
-        }
-        else {
+            return new ResponseEntity<Map<String, Object>>(makeMap("error", "Username(email) already in use"), HttpStatus.CONFLICT);
+        } else {
             player = pRepo.save(new Player(nickname, username, password)); //gives a 201 Created message
-            return new ResponseEntity<Map<String,Object>>(makeMap("player", player.getUsername()), HttpStatus.CREATED);
+            return new ResponseEntity<Map<String, Object>>(makeMap("player", player.getUsername()), HttpStatus.CREATED);
         }
+
     }
 
     //this is needed to build the method makeMap
