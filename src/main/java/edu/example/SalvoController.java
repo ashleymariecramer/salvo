@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
 import java.util.*;
+import java.util.stream.IntStream;
 
 import static java.util.stream.Collectors.toList;
 
@@ -84,6 +85,19 @@ public class SalvoController {
        }
     }
 
+    //this returns the players id number (long) or the number 0 for guests (if no one logged in)
+    private String getLoggedInUser(Authentication authentication){
+        if (!isGuest(authentication)) { //This checks there is not a guest user
+            String loggedInUser = pRepo.findByUsername(authentication.getName()).getUsername();
+            return loggedInUser;
+        }
+        else{
+            String loggedInUser = "guest";
+            return loggedInUser;
+        }
+
+    }
+
     private boolean isGuest(Authentication authentication) {
         return authentication == null || authentication instanceof AnonymousAuthenticationToken;
         //this checks if authentication is null or is an instance the predefined spring security class "AnonymousAuthenticationToken"
@@ -115,18 +129,30 @@ public class SalvoController {
 
     private Map<String, Object> makePlayersGameDetailsDTO(Player player) {
         Map<String, Object> dto = new LinkedHashMap<String, Object>();
-        dto.put("gameId", player.getGameScores().stream().map(gs -> gs.getGame().getId()).collect(toList()));
+        dto.put("allGameIds", player.getGamePlayers().stream().map(gp -> gp.getGame().getId()).collect(toList()));
+        dto.put("gameIdsFinishedGames", player.getGameScores().stream().map(gs -> gs.getGame().getId()).collect(toList()));
         dto.put("gamePlayerIds", player.getGamePlayers().stream().map(gp -> gp.getId()).collect(toList()));
+        List gamePlayerIds = player.getGamePlayers().stream().map(gp -> gp.getId()).collect(toList());
         return dto;
     }
 
     //3. Game View based on gameplayerId
+    //passing gameId as a parameter allows individual scores to be added to game view for completed games
     @RequestMapping("/game_view/{gamePlayerId}")
-    public Map<String, Object> getGamesbyPlayer(@PathVariable Long gamePlayerId) {
+    public Map<String, Object> getGamesbyPlayer(@PathVariable Long gamePlayerId, Authentication authentication) {
         GamePlayer gamePlayer = gpRepo.findOne(gamePlayerId);
         long gameId = gamePlayer.getGame().getId();
-        return makeGameViewDTO(gamePlayer, gamePlayerId, gameId);
-        //passing gameId as a parameter allows individual scores to be added to game view for completed games
+        String playerId = gamePlayer.getPlayer().getUsername();
+        String loggedInUser = getLoggedInUser(authentication);
+        System.out.println(playerId);
+        System.out.println(loggedInUser);
+        if (playerId == loggedInUser) {//if player id for gameplayer & logged are the same -> return game view
+            return makeGameViewDTO(gamePlayer, gamePlayerId, gameId);
+        }
+        else {
+            Map<String, Object> result = makeMap("Error", new ResponseEntity<String>("Sorry, you are not a player in this game", HttpStatus.UNAUTHORIZED));
+            return result;
+        }
     }
 
     private Map<String, Object> makeGameViewDTO(GamePlayer gamePlayer, Long gamePlayerId, Long gameId) {
@@ -262,7 +288,7 @@ public class SalvoController {
     //@RequestParam is necessary before each parameter
     @RequestMapping(path = "/players", method = RequestMethod.POST)
     public ResponseEntity<Map<String,Object>>createPlayer(@RequestParam String nickname,
-                                                          @RequestParam @Email String username,
+                                                          @RequestParam String username,
                                                           @RequestParam String password){
         Player player = pRepo.findByUsername(username); //gives a 409 Conflict Error
         if (player != null) {

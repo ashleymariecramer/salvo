@@ -8,6 +8,7 @@ import org.hibernate.validator.constraints.Email;
 import org.hibernate.validator.constraints.NotEmpty;
 
 import javax.persistence.*;
+import javax.validation.constraints.Pattern;
 import java.util.Set;
 
 @Entity  // tells Java to create a 'Player' table for this class
@@ -21,6 +22,7 @@ public class Player {
     private String nickname;
     @NotEmpty (message = "Please enter a username")
     @Email (message = "Please enter valid email address") //Ask: only seems to validate if there is an '@' symbol
+    @Pattern(regexp=".+@.+\\..+", message="Please provide a valid email address") //checks email has format x@y.z
     private String username;
     @NotEmpty (message = "Please enter a password")
     private String password;

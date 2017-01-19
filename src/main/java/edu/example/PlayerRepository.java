@@ -13,6 +13,8 @@ import org.springframework.data.rest.core.annotation.RepositoryRestResource;
 public interface PlayerRepository extends JpaRepository<Player, Long> {
     List<Player> findPlayersByUsername(@Param("name") String name); //This one is used on SalvoApplication security
     Player findByUsername(@Param("name") String name); //this one for building /api/games DTO in SalvoController
+    Long findById(@Param("name") String name); //this is to return the player id of the logged in user
+
     //Here findBy method needs to include the name of a parameter in the related class
-    //but the name which is used after @Param can be anything - am using email
+
 }
