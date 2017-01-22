@@ -79,21 +79,32 @@ tbody{
 }
 
 .games{
-width: 100px;
+    width: 100px;
 }
 
 #output{
-text-align: center;
+    text-align: center;
 }
 
 .warning{
-color: red;
+    color: red;
 }
 
 #logout_form{
-display: none;
+    display: none;
 }
 
 #signup_form{
-display: none;
+    display: none;
+}
+
+a{
+    background-color: DarkCyan;
+    color: white;
+    border: 1px solid DarkSlateGrey; /*TODO: this doesn't show up */
+    margin: 2px;
+}
+
+.completedGame{
+    background-color: LightSlateGrey;
 }

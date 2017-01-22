@@ -78,7 +78,7 @@ public class SalvoController {
     public Map<String, Object> getUserGames(Authentication authentication) {
        if (!isGuest(authentication)) { //This checks there is not a guest user
            Player loggedInUser = pRepo.findByUsername(authentication.getName());
-           return makeUserDTO(loggedInUser);
+           return makeUserDTO(loggedInUser, authentication);
        }
        else{
            return makeGuestUserDTO();
@@ -95,7 +95,6 @@ public class SalvoController {
             String loggedInUser = "guest";
             return loggedInUser;
         }
-
     }
 
     private boolean isGuest(Authentication authentication) {
@@ -109,32 +108,71 @@ public class SalvoController {
         return dto;
     }
 
-    private Map<String, Object> makeUserDTO(Player player) {
+    private Map<String, Object> makeUserDTO(Player player, Authentication authentication) {
+        String loggedInUser = getLoggedInUser(authentication);
+//        Long gamePlayerId = player.getGamePlayers().stream().filter(gp -> gp.getPlayer().getUsername() == loggedInUser).findFirst().get().getId();;
         Map<String, Object> dto = new LinkedHashMap<String, Object>();
-        dto.put("player", makeUserDetailsDTO(player)); // don´t need to loop here cos a game player only has one player
-//        dto.put("games", player.getGameScores().stream().map(gs -> gs.getGame().getId()).collect(toList()));
-        dto.put("games", makePlayersGameDetailsDTO(player));
-
-
+        dto.put("loggedInPlayer", makeLoggedInPlayersDetailsDTO(player)); // don´t need to loop here cos a game player only has one player
+        dto.put("games", player.getGamePlayers().stream().map(gp -> gp.getId()).map(gpId -> makePlayersGameDetailsDTO(gpId, authentication)).collect(toList()));
         return dto;
     }
 
-    private Map<String, Object> makeUserDetailsDTO(Player player) {
+    private Map<String, Object> makeLoggedInPlayersDetailsDTO(Player player) {
         Map<String, Object> dto = new LinkedHashMap<String, Object>();
         dto.put("playerId", player.getId());
         dto.put("username", player.getUsername());
         dto.put("nickname", player.getNickname());
+        dto.put("gameIdsFinishedGames", player.getGameScores().stream().map(gs -> gs.getGame().getId()).collect(toList()));
+        dto.put("gamePlayerIds", player.getGamePlayers().stream().map(gp -> gp.getId()).collect(toList()));
+        dto.put("games", player.getGamePlayers().stream().map(gp -> gp.getGame().getId()).collect(toList()));
         return dto;
     }
 
-    private Map<String, Object> makePlayersGameDetailsDTO(Player player) {
-        Map<String, Object> dto = new LinkedHashMap<String, Object>();
-        dto.put("allGameIds", player.getGamePlayers().stream().map(gp -> gp.getGame().getId()).collect(toList()));
-        dto.put("gameIdsFinishedGames", player.getGameScores().stream().map(gs -> gs.getGame().getId()).collect(toList()));
-        dto.put("gamePlayerIds", player.getGamePlayers().stream().map(gp -> gp.getId()).collect(toList()));
-        List gamePlayerIds = player.getGamePlayers().stream().map(gp -> gp.getId()).collect(toList());
-        return dto;
+//    private Map<String, Object> makePlayersGameDetailsDTO(Game game, String loggedInUser) {
+//        Map<String, Object> dto = new LinkedHashMap<String, Object>();
+//        Long gameId = game.getId();
+//        dto.put("gameId", gameId);
+////        dto.put("gamePlayers", game.getGamePlayers().stream().map(gamePlayer -> makePlayerAndOpponentDTO(gamePlayer, gameId, loggedInUser)).collect(toList()));
+//        dto.put("gameId", game.getId());
+//        dto.put("gamePlayers", game.getGamePlayers());
+//        dto.put("gameScores", game.getGameScores());
+
+
+
+    public Map<String, Object> makePlayersGameDetailsDTO(Long gamePlayerId, Authentication authentication) {
+        GamePlayer gamePlayer = gpRepo.findOne(gamePlayerId);
+        long gameId = gamePlayer.getGame().getId();
+        String playerId = gamePlayer.getPlayer().getUsername();
+        String loggedInUser = getLoggedInUser(authentication);
+        if (playerId == loggedInUser) {//if player id for gameplayer & logged are the same -> return game view
+            return makePlayersGamesViewsDTO(gamePlayer, gamePlayerId, gameId);
+        }
+        else {
+            Map<String, Object> result = makeMap("Error", new ResponseEntity<String>("Sorry, you are not a player in this game", HttpStatus.UNAUTHORIZED));
+            return result;
+        }
     }
+    private Map<String, Object> makePlayersGamesViewsDTO(GamePlayer gamePlayer, Long gamePlayerId, Long gameId) {
+    Map<String, Object> dto = new LinkedHashMap<String, Object>();
+        dto.put("gameId", gamePlayer.getGame().getId());
+        dto.put("you", gamePlayer.getGame().getGamePlayers().stream().filter(gp -> gp.getId() == gamePlayerId)
+            .findFirst().map(gp -> makeGamePlayerDTO(gp, gameId)).get());
+        dto.put("opponent", gamePlayer.getGame().getGamePlayers().stream().filter(gp -> gp.getId() != gamePlayerId)
+            .findFirst().map(gp -> makeGamePlayerDTO(gp, gameId)).get());
+        return dto;
+}
+
+//
+//    private Map<String, Object> makePlayerAndOpponentDTO(GamePlayer gamePlayer, long gameId, String loggedInUser) {
+//            Map<String, Object> dto = new LinkedHashMap<String, Object>();
+//            Long gamePlayerId = gamePlayer.getId();
+//            String gpUsername = gpRepo.findOne(gamePlayerId).getPlayer().getUsername();
+//            //If loggedInUsername and username for the gameplayer are the same create dto for you
+//            //if not create dto for opponent
+//            dto.put("player", makeGamePlayerDTO(gamePlayer, gameId));
+//
+//            return dto;
+//        }
 
     //3. Game View based on gameplayerId
     //passing gameId as a parameter allows individual scores to be added to game view for completed games
@@ -144,8 +182,6 @@ public class SalvoController {
         long gameId = gamePlayer.getGame().getId();
         String playerId = gamePlayer.getPlayer().getUsername();
         String loggedInUser = getLoggedInUser(authentication);
-        System.out.println(playerId);
-        System.out.println(loggedInUser);
         if (playerId == loggedInUser) {//if player id for gameplayer & logged are the same -> return game view
             return makeGameViewDTO(gamePlayer, gamePlayerId, gameId);
         }

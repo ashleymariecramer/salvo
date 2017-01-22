@@ -57,17 +57,37 @@ $(function() {
             $("#currentUser").append("<h3 class='warning'>" + "Log in to see the games you are playing in" + "</h3>");
         }
         else{
+        console.log(data);
             $("#login_form").hide(); //hides login
             $("#logout_form").show(); //shows logout button
-            $("#currentUser").append("<h2>" + "Hi there " + "<b>" + data.player.nickname + "</b>" + "</h2>");
-            if (data.games.gamePlayerIds.length < 1){
+            $("#currentUser").append("<h2>" + "Hi there " + "<b>" + data.loggedInPlayer.nickname + "</b>" + "</h2>");
+            if (data.games.length < 1){
                  $("#currentUser").append("<h4>" + "Time to start playing!");
-                        }
+            }
             else{
                  $("#currentUser").append("<h4>" + "Here are your games: ");
-                    for (var i = 0; i < data.games.gamePlayerIds.length ; i++){
-//                        $("#currentUser").append("<button class='games' id'=" + data.games.gamePlayerIds[i] + ">" + "Game in play for gamePlayer:" + data.games.gamePlayerIds[i] + "</button>");
-                        $("#currentUser").append('<a href="/game.html?gp=' + data.games.gamePlayerIds[i] + '" class="btn btn-primary btn-lg active" role="button">' + "Game in play for gamePlayer:" + data.games.gamePlayerIds[i] + '</a>');
+                    for (var i = 0; i < data.games.length ; i++){
+                        var score = data.games[i].you.player.score;
+                        var status = "completedGame";
+                        if (data.games[i].you.player.score < 0.5){
+                        score = "over: You lost";}
+                        if (data.games[i].you.player.score > 0.5){
+                        score = "over: You won!";}
+                        if (data.games[i].you.player.score == 0.5){
+                        score = "over: You tied";}
+                        else{
+                        score = "still in play";
+                        status = "inPlay"}
+                        $("#currentUser").append('<a '
+                        + ' data-gameId=' + data.games[i].gameId
+                        + ' data-gpId=' + data.games[i].you.gamePlayerId
+                        + ' data-opponentGpId=' + data.games[i].opponent.gamePlayerId
+                        + ' href="/game.html?gp=' + data.games[i].you.gamePlayerId // btn-lg active
+                        + '" class="btn ' + status + '" role="button">'
+                        + 'Game ' + data.games[i].gameId
+                        + '<br> You vs ' + data.games[i].opponent.player.nickname
+                        + '<br> Game ' + score +
+                        '</a>');
 
                     }
                  }
