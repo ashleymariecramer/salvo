@@ -38,6 +38,10 @@ public class GamePlayer {
         this.player = player;
     }
 
+    public GamePlayer(Game game, Player player) {
+        this(0l, game, player);
+    }
+
     // ---------------------Methods(public)----------------------------------
     public long getId() {
         return id;

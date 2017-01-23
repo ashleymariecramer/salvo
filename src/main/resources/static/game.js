@@ -7,11 +7,11 @@ $(function() {
 });
 
 
-//  ***  On event functions  ***  //
+// ***  On event functions  ***  //
 
   //** Logout **
     $("#logout_button").click(function(evt) {
-    evt.preventDefault(); //ASK: Is this necessary - doesn't seem to do anything????
+    evt.preventDefault(); //used with forms to prevent them getting submitted automatically - used with 'onsubmit="return false"' in html
     var form = evt.target.form; //this is needed later to gets the values from the form
     $.post("/api/logout")
      .done(function() {
@@ -77,10 +77,15 @@ $(function() {
         game.id = data.gameView.gameId;
         game.created = new Date(data.gameView.created);
         game.you = data.you.player.nickname;
-        game.opp = data.opponent.player.nickname;
-        $("#output").html("<h2>" + "You (<b>" + game.you + "</b>) are playing against <b>" + game.opp + "</b></h2>" +
-                 "<h3><i>"+"Game: " + game.id +", Created on: " + game.created + "</i></h3>");
-
+        if (data.opponent != undefined) { //if there is an opponent fill in their details
+            opponent = data.opponent.player.nickname;
+            $("#output").html("<h2>" + "You (<b>" + game.you + "</b>) are playing against <b>" + opponent + "</b></h2>" +
+            "<h3><i>"+"Game: " + game.id +", Created on: " + game.created + "</i></h3>");
+        }
+        else { //if there's no opponent
+            $("#output").html("<h2 class='warning'>" + "Game awaiting Opponent</h2>" +
+            "<h3><i>"+"Game: " + game.id +", Created on: " + game.created + "</i></h3>");
+        }
     }
 
 //ajax call to the api to get the JSON data - if successful it uses data to draw the game view if not it returns an error
@@ -98,12 +103,13 @@ $(function() {
     else{
           gameView(data);
           drawOwnShipLocations(data);
-          locateOpponentShipLocations(data);
           drawOwnSalvoLocations(data);
-          locateOpponentSalvoLocations(data);
+          if (data.opponent != undefined) { //if there's no opponent do not add their ship and salvo data to the grids
+                locateOpponentShipLocations(data);
+                locateOpponentSalvoLocations(data);
+          }
           determineHits();
         }
-
     })
     .fail(function( jqXHR, textStatus ) {
       showOutput( "Failed: " + textStatus );
@@ -123,11 +129,11 @@ $(function() {
 //method to draw opponents ships on their grid
   function locateOpponentShipLocations(data){
         for (var i = 0; i < data.opponentShips.length; i++){
-            for (var j = 0; j < data.opponentShips[i].locations.length; j++){
-                var location = data.opponentShips[i].locations[j];
-                $("#opponentGrid > tr > td."+location).addClass("shipHidden"); //only adds ships to own grid
-                }
-            }
+                    for (var j = 0; j < data.opponentShips[i].locations.length; j++){
+                        var location = data.opponentShips[i].locations[j];
+                        $("#opponentGrid > tr > td."+location).addClass("shipHidden"); //only adds ships to own grid
+                        }
+                    }
   }
 
 //method to draw players own salvos on opponent grid
@@ -149,7 +155,7 @@ $(function() {
                 var turn = data.yourSalvoes[i].turn;
                 $("#ownGrid > tr > td."+location).addClass("oppSalvoes").html(turn); //only adds ships to own grid
                 }
-            }
+        }
   }
 
 //method to determine if salvos have hit any ships

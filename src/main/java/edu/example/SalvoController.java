@@ -1,17 +1,13 @@
 package edu.example;
 
-import org.hibernate.validator.constraints.Email;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
-import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
-import javax.validation.Valid;
 import java.util.*;
-import java.util.stream.IntStream;
 
 import static java.util.stream.Collectors.toList;
 
@@ -34,18 +30,15 @@ public class SalvoController {
     //this injects an instance of the class PlayerRepository for use by this controller (Dependency Injection)
     private PlayerRepository pRepo;
 
-// This gives the username (email of the logged in player)
-//    private String getUserName(Authentication authentication) {
-//        String details = authentication.getName();
-//        return details; /
-//    }
 
-    //2. List of All to be shown whether user logged in or not
+    /****************************** API /GAMES **************************************/
+    //1. List of All games to be shown whether user logged in or not
     @RequestMapping(path = "/games", method = RequestMethod.GET)
     public List<Object> getAllGames() {
         return repo.findAll().stream().map(game -> makeGameDTO(game)).collect(toList());
     }
 
+    //for each game it returns the id, creation date and the players: with their gpId & player details
     private Map<String, Object> makeGameDTO(Game game) {
         Map<String, Object> dto = new LinkedHashMap<String, Object>();
         long gameId = game.getId();
@@ -56,6 +49,7 @@ public class SalvoController {
         return dto;
     }
 
+    //for each gameplayer it returns their id and player details
     private Map<String, Object> makeGamePlayerDTO(GamePlayer gamePlayer, long gameId) {
         Map<String, Object> dto = new LinkedHashMap<String, Object>();
         dto.put("gamePlayerId", gamePlayer.getId());
@@ -63,6 +57,7 @@ public class SalvoController {
         return dto;
     }
 
+    // the gameplayers details include their playerId, username(email), nickname and score(if game is finished)
     private Map<String, Object> makePlayerDTO(Player player, long gameId) {
         Map<String, Object> dto = new LinkedHashMap<String, Object>();
         dto.put("playerId", player.getId());
@@ -73,6 +68,8 @@ public class SalvoController {
         return dto;
     }
 
+
+    /******************************* API /CURRENT USER GAMES ********************************************/
     //2. List of Games by Logged in player
     @RequestMapping(path = "/currentUserGames", method = RequestMethod.GET)
     public Map<String, Object> getUserGames(Authentication authentication) {
@@ -86,7 +83,7 @@ public class SalvoController {
     }
 
     //this returns the players id number (long) or the number 0 for guests (if no one logged in)
-    private String getLoggedInUser(Authentication authentication){
+    private String getUsername(Authentication authentication){
         if (!isGuest(authentication)) { //This checks there is not a guest user
             String loggedInUser = pRepo.findByUsername(authentication.getName()).getUsername();
             return loggedInUser;
@@ -109,8 +106,7 @@ public class SalvoController {
     }
 
     private Map<String, Object> makeUserDTO(Player player, Authentication authentication) {
-        String loggedInUser = getLoggedInUser(authentication);
-//        Long gamePlayerId = player.getGamePlayers().stream().filter(gp -> gp.getPlayer().getUsername() == loggedInUser).findFirst().get().getId();;
+
         Map<String, Object> dto = new LinkedHashMap<String, Object>();
         dto.put("loggedInPlayer", makeLoggedInPlayersDetailsDTO(player)); // don´t need to loop here cos a game player only has one player
         dto.put("games", player.getGamePlayers().stream().map(gp -> gp.getId()).map(gpId -> makePlayersGameDetailsDTO(gpId, authentication)).collect(toList()));
@@ -128,22 +124,11 @@ public class SalvoController {
         return dto;
     }
 
-//    private Map<String, Object> makePlayersGameDetailsDTO(Game game, String loggedInUser) {
-//        Map<String, Object> dto = new LinkedHashMap<String, Object>();
-//        Long gameId = game.getId();
-//        dto.put("gameId", gameId);
-////        dto.put("gamePlayers", game.getGamePlayers().stream().map(gamePlayer -> makePlayerAndOpponentDTO(gamePlayer, gameId, loggedInUser)).collect(toList()));
-//        dto.put("gameId", game.getId());
-//        dto.put("gamePlayers", game.getGamePlayers());
-//        dto.put("gameScores", game.getGameScores());
-
-
-
     public Map<String, Object> makePlayersGameDetailsDTO(Long gamePlayerId, Authentication authentication) {
         GamePlayer gamePlayer = gpRepo.findOne(gamePlayerId);
         long gameId = gamePlayer.getGame().getId();
         String playerId = gamePlayer.getPlayer().getUsername();
-        String loggedInUser = getLoggedInUser(authentication);
+        String loggedInUser = getUsername(authentication);
         if (playerId == loggedInUser) {//if player id for gameplayer & logged are the same -> return game view
             return makePlayersGamesViewsDTO(gamePlayer, gamePlayerId, gameId);
         }
@@ -157,23 +142,17 @@ public class SalvoController {
         dto.put("gameId", gamePlayer.getGame().getId());
         dto.put("you", gamePlayer.getGame().getGamePlayers().stream().filter(gp -> gp.getId() == gamePlayerId)
             .findFirst().map(gp -> makeGamePlayerDTO(gp, gameId)).get());
-        dto.put("opponent", gamePlayer.getGame().getGamePlayers().stream().filter(gp -> gp.getId() != gamePlayerId)
-            .findFirst().map(gp -> makeGamePlayerDTO(gp, gameId)).get());
+
+        Optional<Map<String, Object>> oponent = gamePlayer.getGame().getGamePlayers().stream().filter(gp -> gp.getId() != gamePlayerId)
+                .findFirst().map(gp -> makeGamePlayerDTO(gp, gameId));
+        if (oponent.isPresent()) {
+            dto.put("opponent", oponent.get());
+        }
+
         return dto;
 }
 
-//
-//    private Map<String, Object> makePlayerAndOpponentDTO(GamePlayer gamePlayer, long gameId, String loggedInUser) {
-//            Map<String, Object> dto = new LinkedHashMap<String, Object>();
-//            Long gamePlayerId = gamePlayer.getId();
-//            String gpUsername = gpRepo.findOne(gamePlayerId).getPlayer().getUsername();
-//            //If loggedInUsername and username for the gameplayer are the same create dto for you
-//            //if not create dto for opponent
-//            dto.put("player", makeGamePlayerDTO(gamePlayer, gameId));
-//
-//            return dto;
-//        }
-
+    /*********************************** API /GAME VIEW ****************************************/
     //3. Game View based on gameplayerId
     //passing gameId as a parameter allows individual scores to be added to game view for completed games
     @RequestMapping("/game_view/{gamePlayerId}")
@@ -181,7 +160,7 @@ public class SalvoController {
         GamePlayer gamePlayer = gpRepo.findOne(gamePlayerId);
         long gameId = gamePlayer.getGame().getId();
         String playerId = gamePlayer.getPlayer().getUsername();
-        String loggedInUser = getLoggedInUser(authentication);
+        String loggedInUser = getUsername(authentication);
         if (playerId == loggedInUser) {//if player id for gameplayer & logged are the same -> return game view
             return makeGameViewDTO(gamePlayer, gamePlayerId, gameId);
         }
@@ -199,12 +178,16 @@ public class SalvoController {
         dto.put("yourShips", gamePlayer.getShip().stream().map(ship -> makeShipDTO(ship)).collect(toList()));
         dto.put("yourSalvoes", gamePlayer.getGame().getGamePlayers().stream().filter(gp -> gp.getId() == gamePlayerId)
                 .findFirst().get().getSalvo().stream().map(salvo -> makeSalvoDTO(salvo)).collect(toList()));
-        dto.put("opponent", gamePlayer.getGame().getGamePlayers().stream().filter(gp -> gp.getId() != gamePlayerId)
-                .findFirst().map(gp -> makeGamePlayerDTO(gp, gameId)).get());
-        dto.put("opponentShips", gamePlayer.getGame().getGamePlayers().stream().filter(gp -> gp.getId() != gamePlayerId)
-                .findFirst().get().getShip().stream().map(ship -> makeShipDTO(ship)).collect(toList()));
-        dto.put("opponentSalvoes", gamePlayer.getGame().getGamePlayers().stream().filter(gp -> gp.getId() != gamePlayerId)
-                .findFirst().get().getSalvo().stream().map(salvo -> makeSalvoDTO(salvo)).collect(toList()));
+        Optional<Map<String, Object>> oponent = gamePlayer.getGame().getGamePlayers().stream().filter(gp -> gp.getId() != gamePlayerId)
+                .findFirst().map(gp -> makeGamePlayerDTO(gp, gameId));
+        if (oponent.isPresent()) {
+            dto.put("opponent", oponent.get());
+            dto.put("opponentShips", gamePlayer.getGame().getGamePlayers().stream().filter(gp -> gp.getId() != gamePlayerId)
+                    .findFirst().get().getShip().stream().map(ship -> makeShipDTO(ship)).collect(toList()));
+            dto.put("opponentSalvoes", gamePlayer.getGame().getGamePlayers().stream().filter(gp -> gp.getId() != gamePlayerId)
+                    .findFirst().get().getSalvo().stream().map(salvo -> makeSalvoDTO(salvo)).collect(toList()));
+        }
+
         return dto;
     }
 
@@ -229,7 +212,7 @@ public class SalvoController {
         return dto;
     }
 
-
+    /******************************** API /SCORES *******************************************/
 //   4. List of GamePlayer results
     @RequestMapping("/scores")
     public List<Map<String, Object>> getAllScoreStats() {
@@ -319,6 +302,7 @@ public class SalvoController {
         }
     }
 
+    /*********************************** API /PLAYERS ****************************************/
     //5. Create new players
     //Because some of the conditions have to return a Map ResponseEntity<Map<String,Object>> then all of them have to
     //@RequestParam is necessary before each parameter
@@ -343,6 +327,16 @@ public class SalvoController {
         return map;
     }
 
+    /*********************************** API /NEW GAME ****************************************/
+    //6. Create new game
+    @RequestMapping(path = "/newGame", method = RequestMethod.POST)
+    public ResponseEntity<Map<String,Object>>createGame(Authentication authentication){
+
+        Player player = pRepo.findByUsername(getUsername(authentication));
+        Game game = repo.save(new Game(0l)); //gives a 201 Created message
+        GamePlayer gamePlayer = gpRepo.save(new GamePlayer(game, player));
+        return new ResponseEntity<>(makeMap("gamePlayerId", gamePlayer.getId()), HttpStatus.CREATED);
+    }
 
 //code to test in console:
 // $.post("/api/players", { nickname: "jon", password: "1234" }) --> should trigger 403 error username missing
