@@ -29,6 +29,13 @@ public class SalvoController {
     @Autowired
     //this injects an instance of the class PlayerRepository for use by this controller (Dependency Injection)
     private PlayerRepository pRepo;
+    @Autowired
+    //this injects an instance of the class ShipRepository for use by this controller (Dependency Injection)
+    private ShipRepository shRepo;
+    @Autowired
+    //this injects an instance of the class SalvoRepository for use by this controller (Dependency Injection)
+    private SalvoRepository slRepo;
+
 
 
     /****************************** API /GAMES **************************************/
@@ -365,6 +372,41 @@ public class SalvoController {
         GamePlayer gamePlayer = gpRepo.save(new GamePlayer(game, player));
         return new ResponseEntity<>(makeMap("gamePlayerId", gamePlayer.getId()), HttpStatus.CREATED); //201 Works! :)
     }
+
+    /************************* API /ADD SHIPS (add ships to existing game for specific gameplayer id) ********************************/
+    //8. Add ships
+    @RequestMapping(value="/games/players/{gamePlayerId}/ships", method=RequestMethod.POST)
+    //the ships will be passed as a list from the front end
+    public ResponseEntity<Map<String, Object>> addShip(@PathVariable long gpId, @RequestBody List<Ship> ships, Authentication authentication) {
+        //TODO: replace with real data variables
+        //TODO: need to send ship name and locations from the front-end using @RequestBody
+        Player player = pRepo.findByUsername(getUsername(authentication)); //to check if player loggedin
+        if (player == null) {
+            return new ResponseEntity<>(makeMap("error", "Not logged in"), HttpStatus.UNAUTHORIZED); //401
+        }
+        GamePlayer gamePlayer = gpRepo.findOne(gpId); //check if gamePlayer id exists
+        if (gamePlayer == null) {
+            return new ResponseEntity<>(makeMap("error", "No such gamePlayer"), HttpStatus.UNAUTHORIZED); //401
+        }
+        //Check current player in open game is not same logged in user - compareing usernames
+        Long gameId = gamePlayer.getGame().getId();
+        Player currentPlayer = repo.findOne(gameId).getGamePlayers().stream().map(gps -> gps.getPlayer()).findFirst().get();
+        String currentPlayerUsername = currentPlayer.getUsername();
+        String playerUsername = player.getUsername();
+        if (playerUsername != currentPlayerUsername){
+            return new ResponseEntity<>(makeMap("error", "You are not the gamePlayer in this game"), HttpStatus.UNAUTHORIZED); //401
+        }
+        // TODO add a forbidden response if ships have already been placed
+        if (gamePlayer.getShip() != null ){ //TODO: need to check if this is right
+            return new ResponseEntity<>(makeMap("error", "You have already placed ships for this game"), HttpStatus.FORBIDDEN); //403
+        }
+        String name = "Destroyer"; //TODO: Need to replace this
+        List<String> locations = Arrays.asList("H2", "H3", "H4"); //TODO: Need to replace this
+        //TODO: need to parse through list of ships to obtain info for name and locations - loop????
+        Ship ship = shRepo.save(new Ship(name, gamePlayer, locations));
+        return new ResponseEntity<>(makeMap("shipId", ship.getId()), HttpStatus.CREATED); //201
+    }
+
 
 
 /** End of all functions **/

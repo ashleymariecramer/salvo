@@ -164,3 +164,34 @@ function determineHits(){
     $(".ship.oppSalvoes").removeClass("ship oppSalvoes").addClass("hit");
 }
 
+//TODO: get the ship locations from the front end in terms on where mouse clicks or hovers...
+
+// ... variables petName etc set by earlier code from a form
+$.post({
+  var gp = getGamePlayerIdFromURL(); //gets the gamePlayer(gp) id number from the url
+  var url = "/games/players/" + gp + "/ships"; //inserts the gp id number into the api
+  url: url
+  data: JSON.stringify({ name: petName, type: petType, age: petAge }),
+  dataType: "text",
+  contentType: "application/json"
+})
+.done(function (response, status, jqXHR) {
+  alert( "Pet added: " + response );
+})
+.fail(function (jqXHR, status, httpError) {
+  alert("Failed to add pet: " + textStatus + " " + httpError);
+})
+
+
+$.post({
+  url: "/owners/23/pets",
+  data: JSON.stringify({ name: petName, type: petType, age: petAge }),
+  dataType: "text",
+  contentType: "application/json"
+})
+.done(function (response, status, jqXHR) {
+  alert( "Pet added: " + response );
+})
+.fail(function (jqXHR, status, httpError) {
+  alert("Failed to add pet: " + textStatus + " " + httpError);
+})
