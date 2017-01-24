@@ -360,7 +360,7 @@ public class SalvoController {
         String currentPlayerUsername = currentPlayer.getUsername();
         String playerUsername = player.getUsername();
         if (playerUsername == currentPlayerUsername){
-            return new ResponseEntity<>(makeMap("error", "You are already playing in this game"), HttpStatus.FORBIDDEN); //403
+            return new ResponseEntity<>(makeMap("error", "You are already playing in this game"), HttpStatus.FORBIDDEN); //403 Works :)
         }
         GamePlayer gamePlayer = gpRepo.save(new GamePlayer(game, player));
         return new ResponseEntity<>(makeMap("gamePlayerId", gamePlayer.getId()), HttpStatus.CREATED); //201 Works! :)

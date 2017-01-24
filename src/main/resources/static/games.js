@@ -4,6 +4,10 @@ $(function() {
    loadCurrentUser();
    loadGameData();
    loadLeaderBoard();
+   activateUserAccountFunctions();
+   activateGameFunctions();
+
+
 });
 
 //Auxiliary Functions
@@ -32,6 +36,7 @@ $(function() {
     $.getJSON("/api/games")
     .done(function(data) {
           gamesMap(data);
+          hideJoinGameForFullGames();
           })
     .fail(function( jqXHR, textStatus ) {
       showOutput( "Failed: " + textStatus );
@@ -135,27 +140,34 @@ $(function() {
 
   }
 
-
+//Groups together all the  functions related to creating, accessing user accounts
+  function activateUserAccountFunctions(){
+    logIn();
+    logOut();
+    showCreateAccountForm();
+    signUp();
+  }
 
   //** Login **
-    $("#login_button").click(function(evt) {
-    evt.preventDefault(); //used with forms to prevent them getting submitted automatically - used with 'onsubmit="return false"' in html
-    var form = evt.target.form; //this is needed later to gets the values from the form
-    $.post("/api/login",
-           { username: form["username"].value,
-             password: form["password"].value })
-     .done(function() {
-        console.log("logged in!"); //to check login has worked
-        location.reload();//Refreshes page to update with logged in user
-        })
-     .fail(function(jqXHR, textStatus, errorThrown) {
-          alert('Booh! Wrong credentials, try again!');
-          })
-
-  });
-
+  function logIn() {
+     $("#login_button").click(function(evt) {
+        evt.preventDefault(); //used with forms to prevent them getting submitted automatically - used with 'onsubmit="return false"' in html
+        var form = evt.target.form; //this is needed later to gets the values from the form
+        $.post("/api/login",
+               { username: form["username"].value,
+                 password: form["password"].value })
+         .done(function() {
+            console.log("logged in!"); //to check login has worked
+            location.reload();//Refreshes page to update with logged in user
+            })
+         .fail(function(jqXHR, textStatus, errorThrown) {
+              alert('Booh! Wrong credentials, try again!');
+              })
+      });
+  }
 
   //** Logout **
+  function logOut() {
     $("#logout_button").click(function(evt) {
     evt.preventDefault(); //used with forms to prevent them getting submitted automatically - used with 'onsubmit="return false"' in html
     var form = evt.target.form; //this is needed later to gets the values from the form
@@ -167,65 +179,86 @@ $(function() {
         .fail(function() {
             alert('Booh! Something went wrong with the logout. Please try again!');
         })
-
-
-  });
+    });
+  }
 
   //** Show New User account creation form **
+  function showCreateAccountForm() {
     $("#create_account_button").click(function(evt) {
         $("#login_form").hide(); //hides login
         $("#logout_form").hide(); //hides logout button
         $("#signup_form").show(); //shows sign up
-  });
+    });
+  }
 
   //** Sign up  **
-    $("#signup_button").click(function(evt) {
-    evt.preventDefault(); //used with forms to prevent them getting submitted automatically - used with 'onsubmit="return false"' in html
-    var form = evt.target.form; //this is needed later to gets the values from the form
-    if (validateForm() == true) {
-            $.post("/api/players",
-                   { nickname: form["nickname"].value,
-                     username: form["username"].value,
-                     password: form["password"].value })
+  function signUp() {
+        $("#signup_button").click(function(evt) {
+        evt.preventDefault(); //used with forms to prevent them getting submitted automatically - used with 'onsubmit="return false"' in html
+        var form = evt.target.form; //this is needed later to gets the values from the form
+        if (validateForm() == true) {
+                $.post("/api/players",
+                       { nickname: form["nickname"].value,
+                         username: form["username"].value,
+                         password: form["password"].value })
+                 .done(function() {
+                    console.log("new account created!"); //to check login has worked
+                    location.reload();//Refreshes page to update with logged in user
+                    })
+                 .fail(function(jqXHR, textStatus, errorThrown) {
+                      alert("Oops, seems there was a problem! Please try again");
+                      })
+        }
+        });
+  }
+
+  //Groups functions related to creating and joining games
+  function activateGameFunctions() {
+    createNewGame();
+    joinGame();
+  }
+
+    //** Create new game  **
+    function createNewGame() {
+        $("#create_game").click(function(evt) {
+            $.post("/api/newGame")
              .done(function() {
-                console.log("new account created!"); //to check login has worked
-                location.reload();//Refreshes page to update with logged in user
-                })
+                  console.log("new game created!"); //to check login has worked
+                  location.reload();//Refreshes page to update with logged in user
+                  })
              .fail(function(jqXHR, textStatus, errorThrown) {
                   alert("Oops, seems there was a problem! Please try again");
                   })
+        });
     }
-  });
-
-
-    //** Create new game  **
-      $("#create_game").click(function(evt) {
-        $.post("/api/newGame")
-         .done(function() {
-              console.log("new game created!"); //to check login has worked
-              location.reload();//Refreshes page to update with logged in user
-              })
-         .fail(function(jqXHR, textStatus, errorThrown) {
-              alert("Oops, seems there was a problem! Please try again");
-              })
-    });
-
 
     //** Join game  **
-     $("body").on("click",".join_game",function(){
-        var gameId = $(this).attr("data-game-id");
-        $.post("/api/games/"+ gameId + "/players")
-         .done(function(data) { //putting data here gets whatever was returned as JSON body in response entity
-              console.log("game " + gameId + " joined!"); //to check login has worked
-              var gpId = data.gamePlayerId;
-              var url = 'game.html?gp='+ gpId;
-              location.assign(url);//Takes user to game view for new game
-              //Need to obtain the new gamePlayer id and redirect to that page
-              })
-         .fail(function(data, jqXHR, textStatus, errorThrown) {
-              alert(data.responseJSON.error); //links the with error message texts we put in the controller so it shows the specific error
-              })
-    });
+    function joinGame() {
+         $("body").on("click",".join_game",function(){
+            var gameId = $(this).attr("data-game-id");
+            $.post("/api/games/"+ gameId + "/players")
+             .done(function(data) { //putting data here gets whatever was returned as JSON body in response entity
+                  console.log("game " + gameId + " joined!"); //to check login has worked
+                  var gpId = data.gamePlayerId;
+                  var url = 'game.html?gp='+ gpId;
+                  location.assign(url);//Takes user to game view for new game
+                  //Need to obtain the new gamePlayer id and redirect to that page
+                  })
+             .fail(function(data, jqXHR, textStatus, errorThrown) {
+                  alert(data.responseJSON.error); //links the with error message texts we put in the controller so it shows the specific error
+                  })
+        });
+    }
+
+
+    //** Hide "Join game" button if game is full **
+    function hideJoinGameForFullGames() {
+        $('button[class="join_game"][data-num-players=2]').hide();
+        // hides buttons, with class "join_game" & data-num-players with a value of 2
+    }
+
+
+
 
  //** Validate form for signup **
 //check all fields are filled in and email has correct format
