@@ -66,7 +66,6 @@ $(function() {
             }
             else{
                  $("#currentUser").append("<h4>" + "Here are your games: ");
-                 console.log(data);
                     for (var i = 0; i < data.games.length ; i++){
                         var score = data.games[i].you.player.score;
                         var status = "completedGame";
@@ -92,7 +91,6 @@ $(function() {
                         + '<br> You vs ' + opponentNickname
                         + '<br> Game ' + score +
                         '</a>');
-
                     }
                  }
 
@@ -109,7 +107,12 @@ $(function() {
               game.players = gameData.gamePlayers.map(function(gp) {
                   return gp.player.nickname;
               });
-              $("#output").append("<li>" + "Game " + game.gameId + ", Players: " + "<b>" + game.players + "</b>" + ", Created on: " + game.created + "</li>");
+              game.usernames = gameData.gamePlayers.map(function(gp) {
+                  return gp.player.username;
+              });
+              $("#output").append("<li>" + "Game " + game.gameId + ", Players: " + "<b>" + game.players + "</b>" + ", Created on: " + game.created
+              + "<button class='join_game' data-game-id='" + game.gameId + "' data-num-players='" + game.usernames.length
+              + "' data-usernames='" + game.usernames + "'>Join game</button>" + "</li>");
            });
     }
 
@@ -184,12 +187,10 @@ $(function() {
                    { nickname: form["nickname"].value,
                      username: form["username"].value,
                      password: form["password"].value })
-
              .done(function() {
                 console.log("new account created!"); //to check login has worked
                 location.reload();//Refreshes page to update with logged in user
                 })
-
              .fail(function(jqXHR, textStatus, errorThrown) {
                   alert("Oops, seems there was a problem! Please try again");
                   })
@@ -206,6 +207,23 @@ $(function() {
               })
          .fail(function(jqXHR, textStatus, errorThrown) {
               alert("Oops, seems there was a problem! Please try again");
+              })
+    });
+
+
+    //** Join game  **
+     $("body").on("click",".join_game",function(){
+        var gameId = $(this).attr("data-game-id");
+        $.post("/api/games/"+ gameId + "/players")
+         .done(function(data) { //putting data here gets whatever was returned as JSON body in response entity
+              console.log("game " + gameId + " joined!"); //to check login has worked
+              var gpId = data.gamePlayerId;
+              var url = 'game.html?gp='+ gpId;
+              location.assign(url);//Takes user to game view for new game
+              //Need to obtain the new gamePlayer id and redirect to that page
+              })
+         .fail(function(data, jqXHR, textStatus, errorThrown) {
+              alert(data.responseJSON.error); //links the with error message texts we put in the controller so it shows the specific error
               })
     });
 

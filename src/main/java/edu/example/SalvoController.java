@@ -146,8 +146,9 @@ public class SalvoController {
         Optional<Map<String, Object>> oponent = gamePlayer.getGame().getGamePlayers().stream().filter(gp -> gp.getId() != gamePlayerId)
                 .findFirst().map(gp -> makeGamePlayerDTO(gp, gameId));
         if (oponent.isPresent()) {
-            dto.put("opponent", oponent.get());
-        }
+            dto.put("opponent", oponent.get()); // findFirst returns an Optional, as it could be that there is no first to find
+            //So for this reason we can add the conditional to see if it isPresent (ie. has a value) before executing the code
+        } //if there is no optional then this part of the code is skipped
 
         return dto;
 }
@@ -331,18 +332,40 @@ public class SalvoController {
     //6. Create new game
     @RequestMapping(path = "/newGame", method = RequestMethod.POST)
     public ResponseEntity<Map<String,Object>>createGame(Authentication authentication){
-
         Player player = pRepo.findByUsername(getUsername(authentication));
-        Game game = repo.save(new Game(0l)); //gives a 201 Created message
+        Game game = repo.save(new Game(0l));
         GamePlayer gamePlayer = gpRepo.save(new GamePlayer(game, player));
         return new ResponseEntity<>(makeMap("gamePlayerId", gamePlayer.getId()), HttpStatus.CREATED);
     }
 
-//code to test in console:
-// $.post("/api/players", { nickname: "jon", password: "1234" }) --> should trigger 403 error username missing
-// $.post("/api/players", { nickname: "jon", username: "j.bauer@ctu.gov", password: "1234" }) --> should trigger 409 error
-// $.post("/api/players", { nickname: "jon", username: "newbie@aol.com", password: "1234" }) --> should work and give 201 response status
+
+    /************************* API /JOIN GAME (add player to existing game ********************************/
+    //7. Add new player to an existing game, saving new gameplayer id to the gpRepo and updating game in repo too.
+    @RequestMapping(path = "/games/{gameId}/players", method = RequestMethod.POST)
+    public ResponseEntity<Map<String, Object>> checkGamebyId(@PathVariable Long gameId, Authentication authentication) {
+        Player player = pRepo.findByUsername(getUsername(authentication)); //to check if player loggedin
+        if (player == null) {
+            return new ResponseEntity<>(makeMap("error", "Not logged in"), HttpStatus.UNAUTHORIZED); //401 Works! :)
+        }
+        Game game = repo.findOne(gameId); //check if game id exists
+        if (game == null) {
+            return new ResponseEntity<>(makeMap("error", "No such game"), HttpStatus.FORBIDDEN); //403 Works! :)
+        }
+        Integer players = repo.findOne(gameId).getGamePlayers().size(); // check less than 2 players in the game
+        if (players == 2) {
+            return new ResponseEntity<>(makeMap("error", "Game is full"), HttpStatus.FORBIDDEN); //403 Works! :)
+        }
+        //add player as a gamePlayer in the game - Check current player in open game is not same logged in user - compare usernames
+        Player currentPlayer = repo.findOne(gameId).getGamePlayers().stream().map(gps -> gps.getPlayer()).findFirst().get();
+        String currentPlayerUsername = currentPlayer.getUsername();
+        String playerUsername = player.getUsername();
+        if (playerUsername == currentPlayerUsername){
+            return new ResponseEntity<>(makeMap("error", "You are already playing in this game"), HttpStatus.FORBIDDEN); //403
+        }
+        GamePlayer gamePlayer = gpRepo.save(new GamePlayer(game, player));
+        return new ResponseEntity<>(makeMap("gamePlayerId", gamePlayer.getId()), HttpStatus.CREATED); //201 Works! :)
+    }
 
 
-
+/** End of all functions **/
 } //Do not delete!! End of function

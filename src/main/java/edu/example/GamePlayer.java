@@ -38,6 +38,8 @@ public class GamePlayer {
         this.player = player;
     }
 
+    //this is second constructor which takes as a default offset 0, if new GamePlayer(1, 2) is passed
+    // with only 2 parameters (instead of 3 in the constructor above) then Java knows to use this version.
     public GamePlayer(Game game, Player player) {
         this(0l, game, player);
     }
