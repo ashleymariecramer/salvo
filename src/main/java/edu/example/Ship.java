@@ -15,7 +15,7 @@ public class Ship {
     @Id
     @GeneratedValue(strategy= GenerationType.AUTO)
     private long id;
-    private String type; //e.g. Carrier(5), Battleship(4), Submarine(3), Destroyer(3), Patrol Boat(2)
+    private String type; //e.g. Airplane Carrier(5), Battleship(4), Submarine(3), Destroyer(3), Patrol Boat(2)
 
     @ManyToOne(fetch= FetchType.EAGER)
     @JoinColumn(name="gameplayer_id")
@@ -33,6 +33,7 @@ public class Ship {
         this.locations = locations;
         this.gamePlayer = gamePlayer;
     }
+
 
     // ---------------------Methods(public)----------------------------------
     public long getId() {

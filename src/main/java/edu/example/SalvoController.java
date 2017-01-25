@@ -375,36 +375,42 @@ public class SalvoController {
 
     /************************* API /ADD SHIPS (add ships to existing game for specific gameplayer id) ********************************/
     //8. Add ships
-    @RequestMapping(value="/games/players/{gamePlayerId}/ships", method=RequestMethod.POST)
+    @RequestMapping(path = "/games/players/{gpId}/ships", method = RequestMethod.POST)
     //the ships will be passed as a list from the front end
-    public ResponseEntity<Map<String, Object>> addShip(@PathVariable long gpId, @RequestBody List<Ship> ships, Authentication authentication) {
-        //TODO: replace with real data variables
-        //TODO: need to send ship name and locations from the front-end using @RequestBody
+   public ResponseEntity<Map<String, Object>> addShip(@PathVariable Long gpId, @RequestBody List<Ship> ships, Authentication authentication) {
         Player player = pRepo.findByUsername(getUsername(authentication)); //to check if player loggedin
         if (player == null) {
-            return new ResponseEntity<>(makeMap("error", "Not logged in"), HttpStatus.UNAUTHORIZED); //401
+            return new ResponseEntity<>(makeMap("error", "Not logged in"), HttpStatus.UNAUTHORIZED); //401 Works! :)
         }
         GamePlayer gamePlayer = gpRepo.findOne(gpId); //check if gamePlayer id exists
         if (gamePlayer == null) {
-            return new ResponseEntity<>(makeMap("error", "No such gamePlayer"), HttpStatus.UNAUTHORIZED); //401
-        }
-        //Check current player in open game is not same logged in user - compareing usernames
+            return new ResponseEntity<>(makeMap("error", "No such gamePlayer"), HttpStatus.UNAUTHORIZED); //401 Works! :)
+        }//
+        //Check current player in open game is not same logged in user - comparing usernames
         Long gameId = gamePlayer.getGame().getId();
-        Player currentPlayer = repo.findOne(gameId).getGamePlayers().stream().map(gps -> gps.getPlayer()).findFirst().get();
-        String currentPlayerUsername = currentPlayer.getUsername();
+        String currentPlayerUsername = gamePlayer.getPlayer().getUsername();
         String playerUsername = player.getUsername();
         if (playerUsername != currentPlayerUsername){
-            return new ResponseEntity<>(makeMap("error", "You are not the gamePlayer in this game"), HttpStatus.UNAUTHORIZED); //401
+            return new ResponseEntity<>(makeMap("error", "You are not the gamePlayer in this game"), HttpStatus.UNAUTHORIZED); //401 Works! :)
         }
-        // TODO add a forbidden response if ships have already been placed
-        if (gamePlayer.getShip() != null ){ //TODO: need to check if this is right
-            return new ResponseEntity<>(makeMap("error", "You have already placed ships for this game"), HttpStatus.FORBIDDEN); //403
+        if (gamePlayer.getShip().size() == 5){ // If 5 ships have already been placed
+            return new ResponseEntity<>(makeMap("error", "You have already placed ships for this game"), HttpStatus.FORBIDDEN); //403 Works! :)
         }
-        String name = "Destroyer"; //TODO: Need to replace this
-        List<String> locations = Arrays.asList("H2", "H3", "H4"); //TODO: Need to replace this
+        List<Long> newShipIds = new ArrayList<>(); //this makes the variable 'initialized'
+        //for loop for List of 'ships' to get all the ships added
+        for (Ship ship : ships) {
+            String name = ship.getType();
+            List<String> locations = ship.getLocations();
+            Ship shipNew = shRepo.save(new Ship(name, gamePlayer, locations)); //this saves each ship
+            Long shipId = shipNew.getId();
+            newShipIds.add(shipId);
+        }
+
+//        String name = ship.getType();
+//        List<String> locations = ship.getLocations();
         //TODO: need to parse through list of ships to obtain info for name and locations - loop????
-        Ship ship = shRepo.save(new Ship(name, gamePlayer, locations));
-        return new ResponseEntity<>(makeMap("shipId", ship.getId()), HttpStatus.CREATED); //201
+
+        return new ResponseEntity<>(makeMap("shipIds", newShipIds), HttpStatus.CREATED); //201
     }
 
 

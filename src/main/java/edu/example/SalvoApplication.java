@@ -108,26 +108,30 @@ public class SalvoApplication {
 			List<String> locations6 = Arrays.asList("C6","C7");
 			List<String> locations7 = Arrays.asList("A2","A3","A4");
 			List<String> locations8 = Arrays.asList("G6","H6");
+			List<String> locations9 = Arrays.asList("G1","G2","G3","G4","G5");
+			List<String> locations10 = Arrays.asList("D7","E7","F7","G7");
 			// create new ships (max 5 per player) & assign locations to these
 			//could also combine these 2 steps in 1:
 			// Ship ship1 = new Ship("Destroyer", gamePlayer1, Arrays.asList("H2", "H3", "H4"));
 			Ship ship1 = new Ship("Destroyer", gamePlayer1, locations1);
 			Ship ship2 = new Ship("Submarine", gamePlayer1, locations2);
 			Ship ship3 = new Ship("Patrol Boat", gamePlayer1, locations3);
-			Ship ship4 = new Ship("Destroyer", gamePlayer2, locations4);
-			Ship ship5 = new Ship("Patrol Boat", gamePlayer2, locations5);
-			Ship ship6 = new Ship("Destroyer", gamePlayer3, locations4);
-			Ship ship7 = new Ship("Patrol Boat", gamePlayer3, locations6);
-			Ship ship8 = new Ship("Submarine", gamePlayer4, locations7);
-			Ship ship9 = new Ship("Patrol Boat", gamePlayer4, locations8);
-			Ship ship10 = new Ship("Destroyer", gamePlayer5, locations4);
-			Ship ship11 = new Ship("Patrol Boat", gamePlayer5, locations6);
-			Ship ship12 = new Ship("Submarine", gamePlayer6, locations7);
-			Ship ship13 = new Ship("Patrol Boat", gamePlayer6, locations8);
-			Ship ship14 = new Ship("Destroyer", gamePlayer7, locations4);
-			Ship ship15 = new Ship("Patrol Boat", gamePlayer7, locations6);
-			Ship ship16 = new Ship("Submarine", gamePlayer8, locations7);
-			Ship ship17 = new Ship("Patrol Boat", gamePlayer8, locations8);
+			Ship ship4 = new Ship("Airplane Carrier", gamePlayer1, locations9);
+			Ship ship5 = new Ship("Battleship", gamePlayer1, locations10);
+			Ship ship6 = new Ship("Destroyer", gamePlayer2, locations4);
+			Ship ship7 = new Ship("Patrol Boat", gamePlayer2, locations5);
+			Ship ship8 = new Ship("Destroyer", gamePlayer3, locations4);
+			Ship ship9 = new Ship("Patrol Boat", gamePlayer3, locations6);
+			Ship ship10 = new Ship("Submarine", gamePlayer4, locations7);
+			Ship ship11 = new Ship("Patrol Boat", gamePlayer4, locations8);
+			Ship ship12 = new Ship("Destroyer", gamePlayer5, locations4);
+			Ship ship13 = new Ship("Patrol Boat", gamePlayer5, locations6);
+			Ship ship14 = new Ship("Submarine", gamePlayer6, locations7);
+			Ship ship15 = new Ship("Patrol Boat", gamePlayer6, locations8);
+			Ship ship16 = new Ship("Destroyer", gamePlayer7, locations4);
+			Ship ship17 = new Ship("Patrol Boat", gamePlayer7, locations6);
+			Ship ship18= new Ship("Submarine", gamePlayer8, locations7);
+			Ship ship19 = new Ship("Patrol Boat", gamePlayer8, locations8);
 			// add ships to repo
 			shipRepo.save(ship1);
 			shipRepo.save(ship2);
@@ -146,6 +150,8 @@ public class SalvoApplication {
 			shipRepo.save(ship15);
 			shipRepo.save(ship16);
 			shipRepo.save(ship17);
+			shipRepo.save(ship18);
+			shipRepo.save(ship19);
 			//create salvos
 			Salvo salvo1 = new Salvo(1, gamePlayer1, Arrays.asList("B5", "C5", "F1"));
 			Salvo salvo2 = new Salvo(1, gamePlayer2, Arrays.asList("B4", "B5", "B6"));

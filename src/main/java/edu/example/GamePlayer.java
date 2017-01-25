@@ -73,7 +73,7 @@ public class GamePlayer {
         return player;
     }
 
-    public void setShip(Set<Ship>  ship) {
+    public void setShip(Set<Ship> ship) {
         this.ship = ship;
     }
     public Set<Ship> getShip() {

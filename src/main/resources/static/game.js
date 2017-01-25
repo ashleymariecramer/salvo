@@ -3,7 +3,7 @@ $(function() {
 //Main functions:
    buildGrid();
    loadData();
-
+   addShips(); //TODO: maybe move this somewhere else later
 });
 
 
@@ -165,33 +165,33 @@ function determineHits(){
 }
 
 //TODO: get the ship locations from the front end in terms on where mouse clicks or hovers...
+function addShips(){
+    $("#add_ships").click(function(evt){
+        var gpId = getGamePlayerIdFromURL(); //gets the gamePlayer(gp) id number from the url
+        var url = "api/games/players/" + gpId + "/ships"; //inserts the gp id number into the api
+//        $.getJSON(url)
+        console.log(url);
+        $.post({
+          url: "/api/games/players/" + gpId + "/ships",
+          data: JSON.stringify([ {"type": "destroyer", "locations":["A1", "B1", "C1"]},
+                                 {"type": "patrol boat", "locations":["H5", "H6"]},
+                                 {"type": "aircraft carrier", "locations":["J6", "J7", "J8", "J9", "J10", "J10"]},
+                                 {"type": "submarine", "locations":["D3", "E3", "F4"]},
+                                 {"type": "battleship", "locations":["G4", "H4", "I4", "J4"] }]
+                                 ),
+          dataType: "text",
+          contentType: "application/json"
+        })
+        .done(function() {
+          alert( "Ships added!");
+          location.reload();
+        })
+        .fail(function(data) {
+        console.log(data);
+          alert(data.responseText); //TODO: why does it appear like this:
+          //{ "error" : "You have already placed ships for this game" } (data.responseText.error gives undefined)
+        })
+    });
+}
 
-// ... variables petName etc set by earlier code from a form
-$.post({
-  var gp = getGamePlayerIdFromURL(); //gets the gamePlayer(gp) id number from the url
-  var url = "/games/players/" + gp + "/ships"; //inserts the gp id number into the api
-  url: url
-  data: JSON.stringify({ name: petName, type: petType, age: petAge }),
-  dataType: "text",
-  contentType: "application/json"
-})
-.done(function (response, status, jqXHR) {
-  alert( "Pet added: " + response );
-})
-.fail(function (jqXHR, status, httpError) {
-  alert("Failed to add pet: " + textStatus + " " + httpError);
-})
 
-
-$.post({
-  url: "/owners/23/pets",
-  data: JSON.stringify({ name: petName, type: petType, age: petAge }),
-  dataType: "text",
-  contentType: "application/json"
-})
-.done(function (response, status, jqXHR) {
-  alert( "Pet added: " + response );
-})
-.fail(function (jqXHR, status, httpError) {
-  alert("Failed to add pet: " + textStatus + " " + httpError);
-})

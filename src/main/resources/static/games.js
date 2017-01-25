@@ -237,7 +237,7 @@ $(function() {
          $("body").on("click",".join_game",function(){
             var gameId = $(this).attr("data-game-id");
             $.post("/api/games/"+ gameId + "/players")
-             .done(function(data) { //putting data here gets whatever was returned as JSON body in response entity
+             .done(function(data) { //putting 'data' here gets whatever was returned as JSON body in response entity
                   console.log("game " + gameId + " joined!"); //to check login has worked
                   var gpId = data.gamePlayerId;
                   var url = 'game.html?gp='+ gpId;
