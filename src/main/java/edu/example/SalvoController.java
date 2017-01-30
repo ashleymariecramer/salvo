@@ -406,10 +406,6 @@ public class SalvoController {
             newShipIds.add(shipId);
         }
 
-//        String name = ship.getType();
-//        List<String> locations = ship.getLocations();
-        //TODO: need to parse through list of ships to obtain info for name and locations - loop????
-
         return new ResponseEntity<>(makeMap("shipIds", newShipIds), HttpStatus.CREATED); //201
     }
 

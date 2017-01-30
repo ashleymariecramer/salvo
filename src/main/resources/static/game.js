@@ -3,9 +3,15 @@ $(function() {
 //Main functions:
    buildGrid();
    loadData();
-   addShips(); //TODO: maybe move this somewhere else later
+   addShips();
+   makeElementsDraggable();
+   getPlacedShipDetails();
+   rotateShips();
+
 });
 
+/* Global variable */
+var allShipDetails = [];
 
 // ***  On event functions  ***  //
 
@@ -44,7 +50,7 @@ $(function() {
           if (gridRef.length < 2 || gridRef === "10"){
             var cell = '<td ' + 'class="'+ gridRef + ' key"' + '>' + gridRef + '</td>';
           } else {
-            var cell = '<td ' + 'class="'+ gridRef + '"' + '>' + '</td>';
+            var cell = '<td ' + 'data-grid="'+ gridRef + '"' + ' class="'+ gridRef + '"' + '>' + '</td>';
             }
           colStr += cell;
       }
@@ -52,10 +58,15 @@ $(function() {
     }
     document.getElementById("ownGrid").innerHTML += rows.join("");
     document.getElementById("opponentGrid").innerHTML += rows.join("");
+    removeDataGridAttribute();
     $("#logout_form").show(); //shows logout button
 
   }
 
+//
+function removeDataGridAttribute(){
+    $("#opponentGrid > tr > td").removeAttr("data-grid"); //removes data-grid from opponents grid so ships can't be placed there
+}
 
   // This gets the gp query value from the url. document.location.search gives the query e.g. "?gp=1"
   // document.location.search.substr(1) returns the parameter & its value without the & e.g. "gp=1"
@@ -118,6 +129,7 @@ $(function() {
 
 //method to draw players own ships on their grid
   function drawOwnShipLocations(data){
+        showShipPlacementOptions(data);  //if ships are not already added to grid show ships placement div and add ships button
         for (var i = 0; i < data.yourShips.length; i++){
             for (var j = 0; j < data.yourShips[i].locations.length; j++){
                 var location = data.yourShips[i].locations[j];
@@ -164,27 +176,34 @@ function determineHits(){
     $(".ship.oppSalvoes").removeClass("ship oppSalvoes").addClass("hit");
 }
 
-//TODO: get the ship locations from the front end in terms on where mouse clicks or hovers...
+//Get the ships types and locations from front-end and pass them to the back-end then reload page
 function addShips(){
     $("#add_ships").click(function(evt){
         var gpId = getGamePlayerIdFromURL(); //gets the gamePlayer(gp) id number from the url
-        var url = "api/games/players/" + gpId + "/ships"; //inserts the gp id number into the api
-//        $.getJSON(url)
-        console.log(url);
+ //       var url = "api/games/players/" + gpId + "/ships"; //inserts the gp id number into the api
+        //TODO: check locations not overlapping:
+        var overlapped = checkShipsNotOverlapped(allShipDetails);
+        console.log(overlapped);
+        if (overlapped == true){
+            alert( "Ships overlapping, please move them!");
+            return;
+        }
         $.post({
           url: "/api/games/players/" + gpId + "/ships",
-          data: JSON.stringify([ {"type": "destroyer", "locations":["A1", "B1", "C1"]},
-                                 {"type": "patrol boat", "locations":["H5", "H6"]},
-                                 {"type": "aircraft carrier", "locations":["J6", "J7", "J8", "J9", "J10", "J10"]},
-                                 {"type": "submarine", "locations":["D3", "E3", "F4"]},
-                                 {"type": "battleship", "locations":["G4", "H4", "I4", "J4"] }]
-                                 ),
+          data: JSON.stringify( allShipDetails ),
+//          data: JSON.stringify([ {"type": "destroyer", "locations":["A1", "B1", "C1"]},
+//                                 {"type": "patrol boat", "locations":["H5", "H6"]},
+//                                 {"type": "aircraft carrier", "locations":["J6", "J7", "J8", "J9", "J10", "J10"]},
+//                                 {"type": "submarine", "locations":["D3", "E3", "F4"]},
+//                                 {"type": "battleship", "locations":["G4", "H4", "I4", "J4"] }]
+//                                 ),
           dataType: "text",
           contentType: "application/json"
         })
-        .done(function() {
+        .done(function(data) {
           alert( "Ships added!");
           location.reload();
+          console.log(data);
         })
         .fail(function(data) {
         console.log(data);
@@ -193,5 +212,146 @@ function addShips(){
         })
     });
 }
+
+
+function makeElementsDraggable() {
+  $('.draggable').draggable({ cursor: "crosshair", cursorAt: { top: 14, left: 14 } });
+}
+
+function revertToOriginalLocation() {
+  $('.draggable').draggable({ revert: true});
+}
+
+function cancelRevert() {
+  $('.draggable').draggable({ revert: false});
+}
+
+
+function getPlacedShipDetails(){
+    $(".draggable").mouseup(function(){
+        cancelRevert(); //need to reactive this each time to cancel revert for ships not placed correctly
+        var type = $(this).children().attr("id");  //this get ship type of placed ship - needed for posting ship
+        var shipLength = $(this).children().attr("data-length");  //this gets the length of placed ship - to generate locations
+        var rotation = $(this).children().attr("data-rotation");  //gets if ship horizontally or vertically placed - to generate locations
+        var x = event.clientX; //gets the location of the cursor i.e. first grid square where ships starts
+        var y = event.clientY;
+        $("#" + type).hide(); //hide just the placed ship momentarily to obtain grid data below it
+        var coords = document.elementFromPoint(x, y);
+        var startingPosition = $(coords).attr("data-grid"); //This selects the starting position
+        if (startingPosition == undefined){
+            $(this).children().removeAttr( "style" )
+            revertToOriginalLocation();
+//            return alert("ship must be placed correctly on your own grid")
+        }
+        $("#" + type).show(); // show ship again
+        var locations = calculateShipLocations(rotation, shipLength, startingPosition);
+        var ship = {
+            type: type,
+            locations: locations
+        }
+        var shipDetailsForJSON = '{"type": "'+ type + '", "locations":[' + locations + ']}';
+        console.log("before build: ");
+        console.log(allShipDetails);
+        allShipDetails = buildJsonToAddShips(ship, type); //pass ship details to Json builder & update it
+        console.log("after build: ");
+        console.log(allShipDetails);
+  })
+
+}
+
+
+function calculateShipLocations(rotation, shipLength, startingPosition){
+    var characters = ["A","B","C","D","E","F","G","H","I","J"]; //array for vertical axis
+    var locations = [];
+    locations.push(startingPosition); // initialize array with starting position
+    var letter = startingPosition.slice(0,1); // this isolates the letter
+    var number = parseInt(startingPosition.slice(1)); // this isolates the number & converts it from string to number
+    var shipLengthInt = parseInt(shipLength);
+    var currentLetterPos = characters.indexOf(letter);
+    //this calculates ship locations array for horizontally placed ships
+    if (rotation == "horizontal"){
+        //and makes sure ship fits on grid - using current position & length of the character array (which is 9)
+        if (currentLetterPos + shipLengthInt-1 > 9){
+                        alert("Ship out of grid range, please move it to be completely within the grid.")
+                        return;}
+        for (var i = 0; i < shipLengthInt-1; i++) { //this calculated for vertically placed ships
+            currentLetterPos+= 1;
+            letter = characters[currentLetterPos];
+            //need to loop through array 'characters' to determine next letter
+            var location = letter + number;
+            locations.push(location);
+        }
+        return locations;
+    }
+    //this calculates ship locations array for vertically placed ships
+    if (rotation == "vertical"){
+        for (var i = 0; i < shipLengthInt-1; i++) { //this calculated for vertically placed ships
+                number+= 1;
+                //Exit method if ship location is out of range
+                if (number > 10){
+                    alert("Ship out of grid range, please move it to be completely within the grid.")
+                    return;
+                }
+                var location = letter + number;
+                locations.push(location);
+            }
+        return locations;
+    }
+}
+
+function rotateShips(){
+    $(":radio").click(function(){
+        var type = $(this).attr("data-id");
+        var rotation = $(this).attr("value");
+        $('#' + type).removeAttr("data-rotation");
+        $('#' + type).attr("data-rotation", rotation); //this sets the correct rotation in terms of the selcted radio button
+    });
+}
+
+function buildJsonToAddShips(ship, type){
+          //loop through the array 'allShipDetails' to check if there is already an object with that type and if so delete the whole object
+          for (var i = 0; i < allShipDetails.length; i++){
+          console.log(allShipDetails);
+                if (allShipDetails[i].type  == type){
+                allShipDetails.splice(i,1); //this should remove one item at position 'i' eg. where the duplicate is
+                //TODO: if change rotation on a placed ship it should also re-change locations - but where to implement this??
+                }
+          }
+        allShipDetails.push(ship);
+        if (allShipDetails.length == 5) { // if all 5 ships have been correctly placed then active 'add_ships' button
+            $("#add_ships").attr("disabled", false);
+            }
+        return allShipDetails;
+}
+
+//TODO: Avoid ships being overlapped
+function checkShipsNotOverlapped(allShipDetails){
+    var arr1 = allShipDetails[0].locations;
+    var arr2 = allShipDetails[1].locations;
+    var arr3 = allShipDetails[2].locations;
+    var arr4 = allShipDetails[3].locations;
+    var arr5 = allShipDetails[4].locations;
+    var allLocations = arr1.concat(arr2, arr3, arr4, arr5);
+    console.log(arr1, arr2, arr3, arr4, arr5);
+    console.log("allLocations: ");
+    for (var i = 0; i < allLocations.length; i++){
+        var result = jQuery.inArray(allLocations[i], allLocations, i+1);
+        if (result == -1){
+            return false; //This means there are no duplicate locations so overlapping is false
+        }
+        else{
+             return true; //This means there are no duplicate locations so overlapping is false
+        }
+    }
+
+}
+
+
+function showShipPlacementOptions(data){
+    if (data.yourShips.length == 0) {
+        $(".shipPlacementDiv").show();
+    }
+}
+
 
 

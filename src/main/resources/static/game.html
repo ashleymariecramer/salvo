@@ -19,9 +19,7 @@
 
 
         <div class="row">
-            <div class="col-xs-1">
-                <button id="add_ships">Add Ships</button>
-            </div>
+
             <div class="col-xs-4 col-xs-offset-1 border">
                 <h4><b>Your grid</b></h4>
                 <table>
@@ -29,7 +27,7 @@
                     </tbody>
                 </table>
             </div>
-            <div class="col-xs-4 col-xs-offset-2 border">
+            <div class="col-xs-4 col-xs-offset-1 border">
                 <h4><b>Opponent's grid</b></h4>
                 <table>
                     <tbody id="opponentGrid">
@@ -37,6 +35,59 @@
                 </table>
             </div>
         </div>
+
+    <div class="row shipPlacementDiv">
+
+        <div class="col-xs-2 boatSelector">
+            <p><b>Aircraft Carrier(5)</b></p>
+            <input type="radio" name="rotate" data-id="aircraftCarrier" value="horizontal"> Horizontal
+            <input type="radio" name="rotate" data-id="aircraftCarrier" value="vertical"> Vertical
+            <div class="draggable">
+                <div id="aircraftCarrier" data-length="5" data-rotation="horizontal"></div>
+            </div>
+        </div>
+
+        <div class="col-xs-2 boatSelector">
+            <p><b>Battleship(4)</b></p>
+            <input type="radio" name="rotate" data-id="battleship" value="horizontal"> Horizontal
+            <input type="radio" name="rotate" data-id="battleship" value="vertical"> Vertical
+            <div class="draggable">
+                <div id="battleship" data-length="4" data-rotation="horizontal"></div>
+            </div>
+        </div>
+
+        <div class="col-xs-2 boatSelector">
+            <p><b>Submarine(3)</b></p>
+            <input type="radio" name="rotate" data-id="submarine" value="horizontal"> Horizontal
+            <input type="radio" name="rotate" data-id="submarine" value="vertical"> Vertical
+            <div class="draggable">
+                <div id="submarine" data-length="3" data-rotation="horizontal"></div>
+            </div>
+        </div>
+
+        <div class="col-xs-2 boatSelector">
+            <p><b>Destroyer(3)</b></p>
+            <input type="radio" name="rotate" data-id="destroyer" value="horizontal"> Horizontal
+            <input type="radio" name="rotate" data-id="destroyer" value="vertical"> Vertical
+            <div class="draggable">
+                <div id="destroyer" data-length="3" data-rotation="horizontal"></div>
+            </div>
+        </div>
+
+        <div class="col-xs-2 boatSelector">
+            <p><b>Patrol Boat(2)</b></p>
+            <input type="radio" name="rotate" data-id="patrolBoat" value="horizontal"> Horizontal
+            <input type="radio" name="rotate" data-id="patrolBoat" value="vertical"> Vertical
+            <div class="draggable">
+                <div id="patrolBoat" data-length="2" data-rotation="horizontal"></div>
+            </div>
+        </div>
+
+        <div class="col-xs-2">
+            <button id="add_ships" type="button" disabled="disabled" class="btn">Add Ships</button>
+        </div>
+
+    </div>
 
 
 
@@ -46,6 +97,7 @@
 
 
 <script src="https://code.jquery.com/jquery-2.2.0.js"></script>
+<script src="jquery-ui.min.js"></script>
 <script src="game.js"></script>
 
 </body>
