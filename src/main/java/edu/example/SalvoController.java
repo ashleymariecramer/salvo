@@ -378,6 +378,50 @@ public class SalvoController {
     @RequestMapping(path = "/games/players/{gpId}/ships", method = RequestMethod.POST)
     //the ships will be passed as a list from the front end
    public ResponseEntity<Map<String, Object>> addShip(@PathVariable Long gpId, @RequestBody List<Ship> ships, Authentication authentication) {
+        GamePlayer gamePlayer = gpRepo.findOne(gpId);
+        verifyGamePlayer(gpId, authentication);
+
+        if (gamePlayer.getShip().size() == 5){ // If 5 ships have already been placed
+            return new ResponseEntity<>(makeMap("error", "You have already placed ships for this game"), HttpStatus.FORBIDDEN); //403 Works! :)
+        }
+
+        for (Ship ship : ships) {
+            ship.setGamePlayer(gamePlayer);
+        }
+
+        List<Ship> saved = shRepo.save(ships);
+
+        return new ResponseEntity<>(makeMap("shipIds", saved.stream().map(s -> s.getId()).collect(toList())), HttpStatus.CREATED); //201
+    }
+
+
+    /************************* API /ADD SALVOES(add salvoes to existing game for specific gameplayer id) ********************************/
+    //9. Add salvoes
+    @RequestMapping(path = "/games/players/{gpId}/salvoes", method = RequestMethod.POST)
+    //the ships will be passed as a list from the front end
+    public ResponseEntity<Map<String, Object>> addSalvo(@PathVariable Long gpId, @RequestBody Salvo salvo, Authentication authentication) {
+
+        GamePlayer gamePlayer = gpRepo.findOne(gpId);
+        verifyGamePlayer(gpId, authentication);
+        int turn = gamePlayer.getSalvo().size() + 1;
+
+            salvo.setGamePlayer(gamePlayer);
+            salvo.setTurn(turn); //At the moment setting a turn manually //TODO: need to replace this with a method that generated turn
+
+//        //TODO: add a validation to make sure turn is not repeated
+//        if (gamePlayer.getTurn()){ // If turn number has already been used.
+//            return new ResponseEntity<>(makeMap("error", "You have already fired salvoes for this turn"), HttpStatus.FORBIDDEN); //403
+//        }
+
+        //format salvo
+        Salvo saved = slRepo.save(salvo);
+
+        return new ResponseEntity<>(makeMap("salvoIds", salvo.getId()), HttpStatus.CREATED); //201
+    }
+
+
+    //Auxiliary function to check player is logged in and is a gamePlayer in the game
+    public ResponseEntity<Map<String, Object>> verifyGamePlayer(Long gpId, Authentication authentication) {
         Player player = pRepo.findByUsername(getUsername(authentication)); //to check if player loggedin
         if (player == null) {
             return new ResponseEntity<>(makeMap("error", "Not logged in"), HttpStatus.UNAUTHORIZED); //401 Works! :)
@@ -386,28 +430,16 @@ public class SalvoController {
         if (gamePlayer == null) {
             return new ResponseEntity<>(makeMap("error", "No such gamePlayer"), HttpStatus.UNAUTHORIZED); //401 Works! :)
         }//
-        //Check current player in open game is not same logged in user - comparing usernames
+        //Check current player in open game is not same logged in user - comparing usernames //TODO: extract this to be used for salvoes too
         Long gameId = gamePlayer.getGame().getId();
         String currentPlayerUsername = gamePlayer.getPlayer().getUsername();
         String playerUsername = player.getUsername();
-        if (playerUsername != currentPlayerUsername){
+        if (playerUsername != currentPlayerUsername) {
             return new ResponseEntity<>(makeMap("error", "You are not the gamePlayer in this game"), HttpStatus.UNAUTHORIZED); //401 Works! :)
         }
-        if (gamePlayer.getShip().size() == 5){ // If 5 ships have already been placed
-            return new ResponseEntity<>(makeMap("error", "You have already placed ships for this game"), HttpStatus.FORBIDDEN); //403 Works! :)
-        }
-        List<Long> newShipIds = new ArrayList<>(); //this makes the variable 'initialized'
-        //for loop for List of 'ships' to get all the ships added
-        for (Ship ship : ships) {
-            String name = ship.getType();
-            List<String> locations = ship.getLocations();
-            Ship shipNew = shRepo.save(new Ship(name, gamePlayer, locations)); //this saves each ship
-            Long shipId = shipNew.getId();
-            newShipIds.add(shipId);
-        }
-
-        return new ResponseEntity<>(makeMap("shipIds", newShipIds), HttpStatus.CREATED); //201
+        return new ResponseEntity<>(makeMap("status", "Player & gamePlayer authorized"), HttpStatus.OK);
     }
+
 
 
 

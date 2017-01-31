@@ -60,6 +60,7 @@ public class Ship {
         return gamePlayer;
     }
 
-
-
+    public void setGamePlayer(GamePlayer gamePlayer) {
+        this.gamePlayer = gamePlayer;
+    }
 }

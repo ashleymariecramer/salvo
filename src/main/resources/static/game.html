@@ -17,6 +17,11 @@
 
         <div id="output"></div>
 
+        <div class="row fireSalvoes">
+            <div class="col-xs-2 col-xs-offset-10">
+                <button id="fire_salvoes" type="button" disabled="disabled" class="btn">Fire Salvoes</button>
+            </div>
+        </div>
 
         <div class="row">
 
@@ -42,8 +47,8 @@
             <p><b>Aircraft Carrier(5)</b></p>
             <input type="radio" name="rotate" data-id="aircraftCarrier" value="horizontal"> Horizontal
             <input type="radio" name="rotate" data-id="aircraftCarrier" value="vertical"> Vertical
-            <div class="draggable">
-                <div id="aircraftCarrier" data-length="5" data-rotation="horizontal"></div>
+            <div class="shipDiv"> <!-- ASK DRAG:  Adding this class makes an element draggable -->
+                <div class="draggable" id="aircraftCarrier" data-length="5" data-rotation="horizontal"></div>
             </div>
         </div>
 
@@ -51,8 +56,8 @@
             <p><b>Battleship(4)</b></p>
             <input type="radio" name="rotate" data-id="battleship" value="horizontal"> Horizontal
             <input type="radio" name="rotate" data-id="battleship" value="vertical"> Vertical
-            <div class="draggable">
-                <div id="battleship" data-length="4" data-rotation="horizontal"></div>
+            <div class="shipDiv">
+                <div class="draggable" id="battleship" data-length="4" data-rotation="horizontal"></div>
             </div>
         </div>
 
@@ -60,8 +65,8 @@
             <p><b>Submarine(3)</b></p>
             <input type="radio" name="rotate" data-id="submarine" value="horizontal"> Horizontal
             <input type="radio" name="rotate" data-id="submarine" value="vertical"> Vertical
-            <div class="draggable">
-                <div id="submarine" data-length="3" data-rotation="horizontal"></div>
+            <div class="shipDiv">
+                <div class="draggable" id="submarine" data-length="3" data-rotation="horizontal"></div>
             </div>
         </div>
 
@@ -69,8 +74,8 @@
             <p><b>Destroyer(3)</b></p>
             <input type="radio" name="rotate" data-id="destroyer" value="horizontal"> Horizontal
             <input type="radio" name="rotate" data-id="destroyer" value="vertical"> Vertical
-            <div class="draggable">
-                <div id="destroyer" data-length="3" data-rotation="horizontal"></div>
+            <div class="shipDiv">
+                <div class="draggable" id="destroyer" data-length="3" data-rotation="horizontal"></div>
             </div>
         </div>
 
@@ -78,8 +83,8 @@
             <p><b>Patrol Boat(2)</b></p>
             <input type="radio" name="rotate" data-id="patrolBoat" value="horizontal"> Horizontal
             <input type="radio" name="rotate" data-id="patrolBoat" value="vertical"> Vertical
-            <div class="draggable">
-                <div id="patrolBoat" data-length="2" data-rotation="horizontal"></div>
+            <div class="shipDiv">
+                <div class="draggable" id="patrolBoat" data-length="2" data-rotation="horizontal"></div>
             </div>
         </div>
 
@@ -97,7 +102,7 @@
 
 
 <script src="https://code.jquery.com/jquery-2.2.0.js"></script>
-<script src="jquery-ui.min.js"></script>
+<script src="jquery-ui.min.js"></script>  <!-- ASK DRAG: the library was downloaded and linked here -->
 <script src="game.js"></script>
 
 </body>

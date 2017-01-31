@@ -5,9 +5,9 @@ $(function() {
    loadData();
    addShips();
    makeElementsDraggable();
-   getPlacedShipDetails();
    rotateShips();
-
+   getPlacedShipDetails();
+   getSalvoPositions();
 });
 
 /* Global variable */
@@ -22,8 +22,6 @@ var allShipDetails = [];
     $.post("/api/logout")
      .done(function() {
         console.log("logged out!"); //to check login has worked
-        //window.location.replace("/games.html"); This replaces the games.html page so its not in history
-//        $(location).attr('href', '/games.html'); //Takes logged out user back to games page
         location.assign('/games.html');
         })
      .fail(function() {
@@ -70,7 +68,6 @@ function removeDataGridAttribute(){
 
   // This gets the gp query value from the url. document.location.search gives the query e.g. "?gp=1"
   // document.location.search.substr(1) returns the parameter & its value without the & e.g. "gp=1"
-  //TODO: need to changes this to get game player from game number and username the same as logged in
   function getGamePlayerIdFromURL(){
       var query = document.location.search.substr(1).split('=') //e.g. takes "gp=1" & splits into ["gp", "1"]
       var gp = query[1];
@@ -180,8 +177,6 @@ function determineHits(){
 function addShips(){
     $("#add_ships").click(function(evt){
         var gpId = getGamePlayerIdFromURL(); //gets the gamePlayer(gp) id number from the url
- //       var url = "api/games/players/" + gpId + "/ships"; //inserts the gp id number into the api
-        //TODO: check locations not overlapping:
         var overlapped = checkShipsNotOverlapped(allShipDetails);
         console.log(overlapped);
         if (overlapped == true){
@@ -191,12 +186,6 @@ function addShips(){
         $.post({
           url: "/api/games/players/" + gpId + "/ships",
           data: JSON.stringify( allShipDetails ),
-//          data: JSON.stringify([ {"type": "destroyer", "locations":["A1", "B1", "C1"]},
-//                                 {"type": "patrol boat", "locations":["H5", "H6"]},
-//                                 {"type": "aircraft carrier", "locations":["J6", "J7", "J8", "J9", "J10", "J10"]},
-//                                 {"type": "submarine", "locations":["D3", "E3", "F4"]},
-//                                 {"type": "battleship", "locations":["G4", "H4", "I4", "J4"] }]
-//                                 ),
           dataType: "text",
           contentType: "application/json"
         })
@@ -207,56 +196,63 @@ function addShips(){
         })
         .fail(function(data) {
         console.log(data);
-          alert(data.responseText); //TODO: why does it appear like this:
+          alert(data.responseText); //TODO: why does it appear like this - because data type is text not JSON?? test to find out
           //{ "error" : "You have already placed ships for this game" } (data.responseText.error gives undefined)
         })
     });
 }
 
-
+// ASK DRAG: These are the key functions, 1st makes the element with 'draggable' class draggable - can customise type and location of cursor
 function makeElementsDraggable() {
   $('.draggable').draggable({ cursor: "crosshair", cursorAt: { top: 14, left: 14 } });
 }
 
+//ASK DRAG: this makes the draggable object return to its previous location
 function revertToOriginalLocation() {
   $('.draggable').draggable({ revert: true});
 }
 
+//ASK DRAG: this cancels return object to its previous location so it can be dragged and more importantly dropped again
 function cancelRevert() {
   $('.draggable').draggable({ revert: false});
 }
 
 
-function getPlacedShipDetails(){
-    $(".draggable").mouseup(function(){
-        cancelRevert(); //need to reactive this each time to cancel revert for ships not placed correctly
-        var type = $(this).children().attr("id");  //this get ship type of placed ship - needed for posting ship
-        var shipLength = $(this).children().attr("data-length");  //this gets the length of placed ship - to generate locations
-        var rotation = $(this).children().attr("data-rotation");  //gets if ship horizontally or vertically placed - to generate locations
+
+function getStartingPosition(type, x, y){
+        $("#" + type).hide(); //hide just the placed ship momentarily to obtain grid data below it
+        var coords = document.elementFromPoint(x, y); //shows whats at the grid point
+        var startingPosition = $(coords).attr("data-grid"); //This selects the starting position
+        $("#" + type).show(); // show ship again
+        return startingPosition;
+}
+
+
+function getPlacedShipDetails(ship, type, shipLength, rotation, startingPosition){
+    $(".draggable").mouseup (function(){
+      cancelRevert(); //ASK  DRAG: 2. this needs to be reset each time the dragged element is released otherwise it keeps returning to previous location
+        var ship = $(this);
+        var type = $(this).attr("id");  //this get ship type of placed ship - needed for posting ship
+        var shipLength = $(this).attr("data-length");  //this gets the length of placed ship - to generate locations
+        var rotation = $(this).attr("data-rotation");
         var x = event.clientX; //gets the location of the cursor i.e. first grid square where ships starts
         var y = event.clientY;
-        $("#" + type).hide(); //hide just the placed ship momentarily to obtain grid data below it
-        var coords = document.elementFromPoint(x, y);
-        var startingPosition = $(coords).attr("data-grid"); //This selects the starting position
-        if (startingPosition == undefined){
-            $(this).children().removeAttr( "style" )
-            revertToOriginalLocation();
+        var startingPosition = getStartingPosition(type, x, y);
+
+        if (startingPosition == undefined){ //ASK DRAG: if the cursor of the mouse is not over you own grid, i.e. it can't obtain a data-grid attribute from the location where ship was dropped
+            $(ship).removeAttr("style"); //remove the style - position relative location
+            revertToOriginalLocation(); // ASK DRAG: it tells the element to go back to its original location
 //            return alert("ship must be placed correctly on your own grid")
         }
-        $("#" + type).show(); // show ship again
         var locations = calculateShipLocations(rotation, shipLength, startingPosition);
         var ship = {
             type: type,
             locations: locations
         }
         var shipDetailsForJSON = '{"type": "'+ type + '", "locations":[' + locations + ']}';
-        console.log("before build: ");
-        console.log(allShipDetails);
         allShipDetails = buildJsonToAddShips(ship, type); //pass ship details to Json builder & update it
-        console.log("after build: ");
-        console.log(allShipDetails);
-  })
 
+      });
 }
 
 
@@ -269,15 +265,13 @@ function calculateShipLocations(rotation, shipLength, startingPosition){
     var shipLengthInt = parseInt(shipLength);
     var currentLetterPos = characters.indexOf(letter);
     //this calculates ship locations array for horizontally placed ships
-    if (rotation == "horizontal"){
-        //and makes sure ship fits on grid - using current position & length of the character array (which is 9)
+    if (rotation == "horizontal"){ //makes sure ship fits on grid - using current position & character array length (which is 9)
         if (currentLetterPos + shipLengthInt-1 > 9){
                         alert("Ship out of grid range, please move it to be completely within the grid.")
                         return;}
         for (var i = 0; i < shipLengthInt-1; i++) { //this calculated for vertically placed ships
             currentLetterPos+= 1;
             letter = characters[currentLetterPos];
-            //need to loop through array 'characters' to determine next letter
             var location = letter + number;
             locations.push(location);
         }
@@ -287,8 +281,7 @@ function calculateShipLocations(rotation, shipLength, startingPosition){
     if (rotation == "vertical"){
         for (var i = 0; i < shipLengthInt-1; i++) { //this calculated for vertically placed ships
                 number+= 1;
-                //Exit method if ship location is out of range
-                if (number > 10){
+                if (number > 10){ //Exit method if ship location is out of range
                     alert("Ship out of grid range, please move it to be completely within the grid.")
                     return;
                 }
@@ -304,7 +297,7 @@ function rotateShips(){
         var type = $(this).attr("data-id");
         var rotation = $(this).attr("value");
         $('#' + type).removeAttr("data-rotation");
-        $('#' + type).attr("data-rotation", rotation); //this sets the correct rotation in terms of the selcted radio button
+        $('#' + type).attr("data-rotation", rotation); //this sets the correct rotation in terms of the selected radio button
     });
 }
 
@@ -324,7 +317,7 @@ function buildJsonToAddShips(ship, type){
         return allShipDetails;
 }
 
-//TODO: Avoid ships being overlapped
+//This checks that no ships are overlapping before posting to back-end)
 function checkShipsNotOverlapped(allShipDetails){
     var arr1 = allShipDetails[0].locations;
     var arr2 = allShipDetails[1].locations;
@@ -346,12 +339,125 @@ function checkShipsNotOverlapped(allShipDetails){
 
 }
 
-
 function showShipPlacementOptions(data){
     if (data.yourShips.length == 0) {
         $(".shipPlacementDiv").show();
     }
 }
 
+//Get the ships types and locations from front-end and pass them to the back-end then reload page
+function fireSalvoes(salvoLocations){
+    $("#fire_salvoes").click(function(evt){
+        console.log(salvoLocations);
+        var gpId = getGamePlayerIdFromURL(); //gets the gamePlayer(gp) id number from the url
+        $.post({
+          url: "/api/games/players/" + gpId + "/salvoes",
+          data: JSON.stringify({locations: salvoLocations}),
+          dataType: "text",
+          contentType: "application/json"
+        })
+        .done(function(data) {
+          alert( "Salvoes added!");
+          location.reload();
+          console.log(data);
+        })
+        .fail(function(data) {
+        console.log(data);
+          alert(data.responseText); //TODO: why does it appear like this - because data type is text not JSON?? test to find out
+          //{ "error" : "You have already placed ships for this game" } (data.responseText.error gives undefined)
+        })
+    });
+}
+
+function getSalvoPositions(){
+var salvoLocations = [];
+    $("#opponentGrid").on("click", "td", function() {
+        var location = $(this).attr("class"); //this gets the grid ref
 
 
+        if ($(this).hasClass("mySalvoes")){ //if already selected - remove class and removed from array
+            $(this).removeClass("mySalvoes");
+            var grid = $(this).attr("class");
+            var pos = salvoLocations.indexOf(grid);
+            salvoLocations.splice(pos,1);
+            console.log(salvoLocations);
+        } else if (salvoLocations.length < 5) {
+             salvoLocations.push(location);
+             $(this).addClass("mySalvoes");
+             console.log(salvoLocations);
+        } else if (salvoLocations.length == 5){
+        alert("You can only fire up to 5 salvos per turn");
+        }
+        enableFireSalvosButton(salvoLocations);
+    });
+
+    fireSalvoes(salvoLocations);
+}
+
+
+function enableFireSalvosButton(salvoLocations){
+    if (salvoLocations.length > 0) { //activate fire_salvoes button
+        $("#fire_salvoes").attr("disabled", false);
+    } else {
+        $("#fire_salvoes").attr("disabled", true);
+    }
+}
+//
+////TODO: can this be added into getSalvo Positions or best kept separate
+//function buildJsonToAddSalvos(salvoLocations){
+//          var allSalvoDetails;
+//          var salvoLocations = getSalvoPositions();//TODO: don´t think this is the best way to call this
+//          var salvo = {
+//                      locations: salvoLocations
+//                  }
+//                  console.log(all)
+//        return allSalvoDetails;
+//}
+
+function getTurn(){
+     //Everytime post happens to bakc-end need to increase the number of turn
+     turn+= 1;
+     return turn;
+}
+// TODO: if this is too complicated could implement a simple option that when rotation is changed it returns the ship to original location
+
+//        var salvos = []; //empty array for pushing salvo locations
+//
+//        $("#" + type).hide(); //hide just the placed ship momentarily to obtain grid data below it
+//        var coords = document.elementFromPoint(x, y); //shows whats at the grid point
+//        var startingPosition = $(coords).attr("data-grid"); //This selects the starting position
+//        $("#" + type).show(); // show ship again
+//        return startingPosition;
+
+
+//TODO At present the ship loxation data is not updated once ship has been placed and rotation is changed - fix when have time
+//TODO the div around the ship was draggable - i've changed this to be just the div with the ship itself to be draggable so
+//TODO maybe this will helo with ship locations getting moved on save????
+//function dropShip(){
+//      $(".draggable").mouseup (function(){
+////      cancelRevert();
+//            var ship = $(this);
+//            var type = $(this).attr("id");  //this get ship type of placed ship - needed for posting ship
+//            var shipLength = $(this).attr("data-length");  //this gets the length of placed ship - to generate locations
+//            var rotation = $(this).attr("data-rotation");
+//            var x = event.clientX; //gets the location of the cursor i.e. first grid square where ships starts
+//            var y = event.clientY;
+//            var startingPosition = getStartingPosition(type, x, y);
+//            getPlacedShipDetails(ship, type, shipLength, rotation, startingPosition);
+//      });
+//}
+//
+//function changeRotationOfPlacedShip(){
+//     $(":radio").click (function(){
+////     cancelRevert();
+//         var ship = $(this).siblings($(".draggable"));
+//         var type = $(ship).children("div").attr("id");  //this get ship type of placed ship - needed for posting ship
+//         var shipLength = $(ship).children("div").attr("data-length");  //this gets the length of placed ship - to generate locations
+//         var rotation = $(ship).children("div").attr("data-rotation");
+//         var offset = $("#" + type).offset();
+//         var x =  offset.top;//
+//         var y = offset.left;
+//         var startingPosition = getStartingPosition(type, x, y);
+//         getPlacedShipDetails(ship, type, shipLength, rotation, startingPosition);
+//     });
+//}

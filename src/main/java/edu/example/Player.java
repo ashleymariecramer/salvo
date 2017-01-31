@@ -18,10 +18,10 @@ public class Player {
     @Id // id instance variable holds the database key for this class.
     @GeneratedValue(strategy=GenerationType.AUTO) // tells JPA to get the ID from the DBMS.
     private long id;
-    @NotEmpty (message = "Please enter a nickname") //Ask: How do I get these messages to show?
+    @NotEmpty (message = "Please enter a nickname")
     private String nickname;
     @NotEmpty (message = "Please enter a username")
-    @Email (message = "Please enter valid email address") //Ask: only seems to validate if there is an '@' symbol
+    @Email (message = "Please enter valid email address")
     @Pattern(regexp=".+@.+\\..+", message="Please provide a valid email address") //checks email has format x@y.z
     private String username;
     @NotEmpty (message = "Please enter a password")

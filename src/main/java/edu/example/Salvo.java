@@ -41,7 +41,7 @@ public class Salvo {
         return turn;
     }
 
-    public void setTurn(String type) {
+    public void setTurn(Integer turn) {
         this.turn = turn;
     }
 
@@ -57,6 +57,8 @@ public class Salvo {
         return gamePlayer;
     }
 
-
+    public void setGamePlayer(GamePlayer gamePlayer) {
+        this.gamePlayer = gamePlayer;
+    }
 
 }

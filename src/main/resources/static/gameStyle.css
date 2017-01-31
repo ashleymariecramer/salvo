@@ -226,7 +226,7 @@ button.active {
     color: Yellow;
 }
 
-.shipPlacementDiv{
+.shipPlacementDiv{ /* ASK: this ensures draggable object is on top of the other objects on the page */
     z-index: 1; /* This makes sure the ships to be placed are on top of the grid */
     display: none;
 }
@@ -245,4 +245,8 @@ button.active {
 
 .boatSelector4{
     height: 90px;
+}
+
+.fire_salvoes{
+
 }
