@@ -250,3 +250,9 @@ button.active {
 .fire_salvoes{
 
 }
+
+.toFire{
+    background-color: HotPink;
+    border: 1px solid Black;
+    color: Black;
+}

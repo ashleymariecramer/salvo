@@ -48,7 +48,9 @@ var allShipDetails = [];
           if (gridRef.length < 2 || gridRef === "10"){
             var cell = '<td ' + 'class="'+ gridRef + ' key"' + '>' + gridRef + '</td>';
           } else {
-            var cell = '<td ' + 'data-grid="'+ gridRef + '"' + ' class="'+ gridRef + '"' + '>' + '</td>';
+            var cell = '<td ' + 'data-grid="'+ gridRef + '"' +
+                                'data-gridOpp="'+ gridRef + '"' +
+                                ' class="'+ gridRef + '"' + '>' + '</td>';
             }
           colStr += cell;
       }
@@ -64,6 +66,8 @@ var allShipDetails = [];
 //
 function removeDataGridAttribute(){
     $("#opponentGrid > tr > td").removeAttr("data-grid"); //removes data-grid from opponents grid so ships can't be placed there
+    $("#ownGrid > tr > td").removeAttr("data-gridOpp"); //removes data-gridOPP from own grid so salvo grid ref is not linked to class
+
 }
 
   // This gets the gp query value from the url. document.location.search gives the query e.g. "?gp=1"
@@ -147,6 +151,7 @@ function removeDataGridAttribute(){
 
 //method to draw players own salvos on opponent grid
   function drawOwnSalvoLocations(data){
+  console.log(data.yourSalvoes.length); //TODO: test to see if turn data is coming
         for (var i = 0; i < data.yourSalvoes.length; i++){
             for (var j = 0; j < data.yourSalvoes[i].locations.length; j++){
                 var location = data.yourSalvoes[i].locations[j];
@@ -161,7 +166,7 @@ function removeDataGridAttribute(){
         for (var i = 0; i < data.opponentSalvoes.length; i++){
             for (var j = 0; j < data.opponentSalvoes[i].locations.length; j++){
                 var location = data.opponentSalvoes[i].locations[j];
-                var turn = data.yourSalvoes[i].turn;
+                var turn = data.opponentSalvoes[i].turn;
                 $("#ownGrid > tr > td."+location).addClass("oppSalvoes").html(turn); //only adds ships to own grid
                 }
         }
@@ -207,15 +212,15 @@ function makeElementsDraggable() {
   $('.draggable').draggable({ cursor: "crosshair", cursorAt: { top: 14, left: 14 } });
 }
 
-//ASK DRAG: this makes the draggable object return to its previous location
-function revertToOriginalLocation() {
-  $('.draggable').draggable({ revert: true});
-}
-
-//ASK DRAG: this cancels return object to its previous location so it can be dragged and more importantly dropped again
-function cancelRevert() {
-  $('.draggable').draggable({ revert: false});
-}
+////ASK DRAG: this makes the draggable object return to its previous location
+//function revertToPreviousLocation() {
+//  $('.draggable').draggable({ revert: true});
+//}
+//
+////ASK DRAG: this cancels return object to its previous location so it can be dragged and more importantly dropped again
+//function cancelRevert() {
+//  $('.draggable').draggable({ revert: false});
+//}
 
 
 
@@ -230,7 +235,7 @@ function getStartingPosition(type, x, y){
 
 function getPlacedShipDetails(ship, type, shipLength, rotation, startingPosition){
     $(".draggable").mouseup (function(){
-      cancelRevert(); //ASK  DRAG: 2. this needs to be reset each time the dragged element is released otherwise it keeps returning to previous location
+//        cancelRevert(); //ASK  DRAG: 2. this needs to be reset each time the dragged element is released otherwise it keeps returning to previous location
         var ship = $(this);
         var type = $(this).attr("id");  //this get ship type of placed ship - needed for posting ship
         var shipLength = $(this).attr("data-length");  //this gets the length of placed ship - to generate locations
@@ -240,8 +245,8 @@ function getPlacedShipDetails(ship, type, shipLength, rotation, startingPosition
         var startingPosition = getStartingPosition(type, x, y);
 
         if (startingPosition == undefined){ //ASK DRAG: if the cursor of the mouse is not over you own grid, i.e. it can't obtain a data-grid attribute from the location where ship was dropped
-            $(ship).removeAttr("style"); //remove the style - position relative location
-            revertToOriginalLocation(); // ASK DRAG: it tells the element to go back to its original location
+            $(ship).attr("style", "position: relative; top: 0px; left: 0px;"); //resets ship to original location in select ship div
+//            revertToPreviousLocation(); // ASK DRAG: it tells the element to go back to its original location
 //            return alert("ship must be placed correctly on your own grid")
         }
         var locations = calculateShipLocations(rotation, shipLength, startingPosition);
@@ -372,18 +377,21 @@ function fireSalvoes(salvoLocations){
 function getSalvoPositions(){
 var salvoLocations = [];
     $("#opponentGrid").on("click", "td", function() {
-        var location = $(this).attr("class"); //this gets the grid ref
+        var location = $(this).attr("data-gridOpp"); //this gets the grid ref from data-gridOpp attribute
 
+        if ($(this).hasClass("mySalvoes") || $(this).hasClass("key")|| $(this).hasClass("hit")){
+            return;
+        } //if the grid belongs to the key, already has a salvo placed or has been hit then exit out of method
 
-        if ($(this).hasClass("mySalvoes")){ //if already selected - remove class and removed from array
-            $(this).removeClass("mySalvoes");
-            var grid = $(this).attr("class");
+        if ($(this).hasClass("toFire")){ //if already selected - remove class and removed from array
+            $(this).removeClass("toFire");
+            var grid = $(this).attr("data-gridOpp");
             var pos = salvoLocations.indexOf(grid);
             salvoLocations.splice(pos,1);
             console.log(salvoLocations);
         } else if (salvoLocations.length < 5) {
              salvoLocations.push(location);
-             $(this).addClass("mySalvoes");
+             $(this).addClass("toFire");
              console.log(salvoLocations);
         } else if (salvoLocations.length == 5){
         alert("You can only fire up to 5 salvos per turn");
