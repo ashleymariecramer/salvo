@@ -403,19 +403,19 @@ public class SalvoController {
 
         GamePlayer gamePlayer = gpRepo.findOne(gpId);
         verifyGamePlayer(gpId, authentication);
-        int turn = gamePlayer.getSalvo().size() + 1;
+        int turn = gamePlayer.getSalvo().size() + 1; //gets turn  umber based on current no. of salvos saved to repo
 
-            salvo.setGamePlayer(gamePlayer);
-            salvo.setTurn(turn); //At the moment setting a turn manually //TODO: need to replace this with a method that generated turn
+        salvo.setGamePlayer(gamePlayer);
+        salvo.setTurn(turn);
 
-//        //TODO: add a validation to make sure turn is not repeated
-//        if (gamePlayer.getTurn()){ // If turn number has already been used.
-//            return new ResponseEntity<>(makeMap("error", "You have already fired salvoes for this turn"), HttpStatus.FORBIDDEN); //403
-//        }
+        //Validation to make sure turn is not repeated
+        List<Integer> turns = gamePlayer.getSalvo().stream().map( sl -> sl.getTurn()).collect(toList());
+        System.out.println(turns); //this gives an array with the turns for the current game player eg. [1,2,3]
+        if (turns.contains(turn)){
+            return new ResponseEntity<>(makeMap("error", "You have already fired salvoes for this turn"), HttpStatus.FORBIDDEN); //403
+        }
 
-        //format salvo
         Salvo saved = slRepo.save(salvo);
-
         return new ResponseEntity<>(makeMap("salvoIds", salvo.getId()), HttpStatus.CREATED); //201
     }
 
@@ -439,8 +439,6 @@ public class SalvoController {
         }
         return new ResponseEntity<>(makeMap("status", "Player & gamePlayer authorized"), HttpStatus.OK);
     }
-
-
 
 
 /** End of all functions **/
