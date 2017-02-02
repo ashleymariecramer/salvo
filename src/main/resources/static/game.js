@@ -1,3 +1,4 @@
+
 $(function() {
 
 //Main functions:
@@ -145,13 +146,12 @@ function removeDataGridAttribute(){
                     for (var j = 0; j < data.opponentShips[i].locations.length; j++){
                         var location = data.opponentShips[i].locations[j];
                         $("#opponentGrid > tr > td."+location).addClass("shipHidden"); //only adds ships to own grid
-                        }
+                        } //TODO: need to remove this later as it should not be accessible for players
                     }
   }
 
 //method to draw players own salvos on opponent grid
   function drawOwnSalvoLocations(data){
-  console.log(data.yourSalvoes.length); //TODO: test to see if turn data is coming
         for (var i = 0; i < data.yourSalvoes.length; i++){
             for (var j = 0; j < data.yourSalvoes[i].locations.length; j++){
                 var location = data.yourSalvoes[i].locations[j];
@@ -303,6 +303,8 @@ function rotateShips(){
         var rotation = $(this).attr("value");
         $('#' + type).removeAttr("data-rotation");
         $('#' + type).attr("data-rotation", rotation); //this sets the correct rotation in terms of the selected radio button
+        $(this).siblings("div").children().attr("style", "position: relative; top: 0px; left: 0px;"); //resets ship to original location in select ship div
+        $("#add_ships").attr("disabled", true); //deactivate addShips button to avoid already placed ships changing rotation and posting old location
     });
 }
 
@@ -422,11 +424,6 @@ function enableFireSalvosButton(salvoLocations){
 //        return allSalvoDetails;
 //}
 
-function getTurn(){
-     //Everytime post happens to bakc-end need to increase the number of turn
-     turn+= 1;
-     return turn;
-}
 // TODO: if this is too complicated could implement a simple option that when rotation is changed it returns the ship to original location
 
 //        var salvos = []; //empty array for pushing salvo locations
@@ -438,7 +435,7 @@ function getTurn(){
 //        return startingPosition;
 
 
-//TODO At present the ship loxation data is not updated once ship has been placed and rotation is changed - fix when have time
+//TODO At present the ship location data is not updated once ship has been placed and rotation is changed - fix when have time
 //TODO the div around the ship was draggable - i've changed this to be just the div with the ship itself to be draggable so
 //TODO maybe this will helo with ship locations getting moved on save????
 //function dropShip(){

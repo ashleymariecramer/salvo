@@ -50,7 +50,6 @@ public class Game {
     public Set<GamePlayer> getGamePlayers() {
         return gamePlayers;
     }
-
     //when you call the method getGamePlayers() it returns the collection of objects 'gameScores'
     public Set<GameScore> getGameScores() {
         return gameScores;
