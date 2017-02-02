@@ -196,22 +196,19 @@ public class SalvoController {
         dto.put("yourSalvoes", gamePlayer.getGame().getGamePlayers().stream().filter(gp -> gp.getId() == gamePlayerId)
                 .findFirst().get().getSalvo().stream().map(salvo -> makeSalvoDTO(salvo)).collect(toList()));
         dto.put("hitsOnOpp", gamePlayer.getSalvo().stream().map(salvo -> makeHitStatsDTO(salvo, hitsOverall)).collect(toList()));
-//                makeHitStatsDTO(gamePlayer, yourShips, oppSalvoes));
-        //gamePlayer.getGame().getGamePlayers().stream().filter(gp -> gp.getId() == gamePlayerId)
-        //.findFirst().get().getSalvo().stream().map(salvo -> makeHitStatsDTO(yourShips, oppSalvoes)).collect(toList()));
 
-        Optional<Map<String, Object>> oponent = gamePlayer.getGame().getGamePlayers().stream().filter(gp -> gp.getId() != gamePlayerId)
+        Optional<Map<String, Object>> opponent = gamePlayer.getGame().getGamePlayers().stream().filter(gp -> gp.getId() != gamePlayerId)
                 .findFirst().map(gp -> makeGamePlayerDTO(gp, gameId));
-        if (oponent.isPresent()) {
-            dto.put("opponent", oponent.get());
+        if (opponent.isPresent()) {
+            dto.put("opponent", opponent.get());
             dto.put("opponentShips", gamePlayer.getGame().getGamePlayers().stream().filter(gp -> gp.getId() != gamePlayerId)
                     .findFirst().get().getShip().stream().map(ship -> makeShipDTO(ship)).collect(toList()));
             dto.put("opponentSalvoes", gamePlayer.getGame().getGamePlayers().stream().filter(gp -> gp.getId() != gamePlayerId)
                     .findFirst().get().getSalvo().stream().map(salvo -> makeSalvoDTO(salvo)).collect(toList()));
-//            dto.put("hitsOnYou", gamePlayer.getGame().getGamePlayers().stream().filter(gp -> gp.getId() != gamePlayerId)
-//                    .findFirst().get().getSalvo().stream().map(salvo -> makeHitStatsDTO(salvo)).collect(toList()));
-        }
+           dto.put("hitsOnYou", gamePlayer.getGame().getGamePlayers().stream().filter(gp -> gp.getId() != gamePlayerId)
+                    .findFirst().get().getSalvo().stream().map(salvo -> makeHitStatsDTO(salvo, hitsOverall)).collect(toList()));
 
+        }
         return dto;
     }
 
@@ -514,115 +511,3 @@ public class SalvoController {
 /** End of all functions **/
 } //Do not delete!! End of function
 
-
-/*
-@RequestMapping("/scores")
-    public List<Map<String, Object>> getAllScoreStats() {
-        Map<Long, Map<String, Object>> scoreStats = new HashMap<>();
-        List<GameScore> gameScores = gsRepo.findAll();
-
-        for (GameScore gameScore : gameScores) {
-            long id = gameScore.getPlayer().getId();
-            if (scoreStats.containsKey(id)) { //if player already exists in the map
-
-                Map<String, Object> playerScore = scoreStats.get(id);
-                //add new score to existing score
-                double existingScore = (Double) playerScore.get("score");
-                double newScore = existingScore + gameScore.getScore();
-                playerScore.put("score", newScore);
-                //variables for counting hits per ship type
-                Integer aircraftCarrier = 0;
-                Integer battleship = 0;
-                Integer submarine = 0;
-                Integer destroyer = 0;
-                Integer patrolBoat = 0;
-
-                //This checks the game result and updates the count for the relevant result (won, lost, or tied)
-                String result = returnResult(gameScore.getScore());????
-
-                //TODO: need to determine type of ship hit
-                maybe for each turn could create an array hits = [] and push the name of ships into it
-                then for each
-                //could do something similar here for each ship type.
-
-                if (result.equals("aircraftCarrier")) {
-                    aircraftCarrier = (Integer) playerScore.get("aircraftCarrier");
-                    aircraftCarrier++;
-                }
-                else if (result.equals("battleship")) {
-                    battleship = (Integer) playerScore.get("battleship");
-                    battleship++;
-                }
-                    submarine = (Integer) playerScore.get("submarine");
-                    submarine++;
-                }
-                else if (result.equals("destroyer")) {
-                    destroyer = (Integer) playerScore.get("destroyer");
-                    destroyer++;
-                }
-
-                else{
-                    patrolBoat = (Integer) playerScore.get("patrolBoat");
-                    patrolBoat++;
-                }
-
-                playerScore.put("aircraftCarrier", aircraftCarrier);
-                playerScore.put("battleship", battleship);
-                playerScore.put("submarine", submarine);
-                playerScore.put("destroyer", destroyer);
-                playerScore.put("patrolBoat", patrolBoat);
- Can have running total and when reaches same no as ships shows sunk,
-                and another which just gives feedback per turn
-
-            } else { //If no player exists for this id then create initial data with playerId, nickname, and scores
-                scoreStats.put(id, makeScoreStatsDTO(gameScore));
-            }
-        }
-        // This converts the map within a map with the long id into a simple array of the maps for the player score stats
-        List<Map<String, Object>> result = new ArrayList<>();
-        //This set takes the long ids for each player
-        Set<Long> keys = scoreStats.keySet();
-        for (Long key : keys) { //this loops through the long ids to get their keys (which is the whole map key/value pairs for nickname: JB, score:1 etc)
-
-            result.add(scoreStats.get(key));
-        }
-
-        return result;
-
-    }
-
-    private Map<String, Object> makeScoreStatsDTO(GameScore gameScore) {
-        Map<String, Object> dto = new LinkedHashMap<String, Object>();
-        dto.put("playerId", gameScore.getPlayer().getId());
-        dto.put("nickname", gameScore.getPlayer().getNickname());
-        dto.put("score", gameScore.getScore());
-        dto.put("won", 0);
-        dto.put("lost", 0);
-        dto.put("tied", 0);
-        String result = returnResult(gameScore.getScore());
-
-        //Here I need to put something which decides which result to populate with value 1
-        if (result.equals("won")) {
-            dto.put("won", 1);
-        }
-        else if (result.equals("lost")) {
-            dto.put("lost", 1);
-        }
-        else{
-            dto.put("tied", 1);
-        }
-        return dto;
-    }
-
-    private String returnResult(double score){
-        if (score < 0.5 ){
-            return "lost";
-        }
-        else if (score > 0.5 ){
-            return "won";
-        }
-        else {
-            return "tied";
-        }
-    }
-*/
