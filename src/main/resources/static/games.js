@@ -121,9 +121,9 @@ $(function() {
            });
     }
 
-  //get data from JSON and create a new variable which contains the game Id, creation date and players and present this in a string
+  //get data from JSON
   function scoresMap(data) {
-         data.map(function(scoreData) {
+         data.map(function(scoreData) {//two layers because we are looping through data to get each entry
             var player = {};
             player.nickname = scoreData.nickname;
             player.score = scoreData.score;

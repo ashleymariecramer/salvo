@@ -79,28 +79,6 @@ function removeDataGridAttribute(){
       return gp;
     }
 
-  // display text in the output area
-  function showOutput(text) {
-    $("#output").text(text);
-  }
-
-  //get data from JSON and create a new variable which contains the game Id, creation date and players and present this in a string
-  function gameView(data) {
-        var game = {};
-        game.id = data.gameView.gameId;
-        game.created = new Date(data.gameView.created);
-        game.you = data.you.player.nickname;
-        if (data.opponent != undefined) { //if there is an opponent fill in their details
-            opponent = data.opponent.player.nickname;
-            $("#output").html("<h2>" + "You (<b>" + game.you + "</b>) are playing against <b>" + opponent + "</b></h2>" +
-            "<h3><i>"+"Game: " + game.id +", Created on: " + game.created + "</i></h3>");
-        }
-        else { //if there's no opponent
-            $("#output").html("<h2 class='warning'>" + "Game awaiting Opponent</h2>" +
-            "<h3><i>"+"Game: " + game.id +", Created on: " + game.created + "</i></h3>");
-        }
-    }
-
 //ajax call to the api to get the JSON data - if successful it uses data to draw the game view if not it returns an error
   function loadData() {
     var gp = getGamePlayerIdFromURL(); //gets the gamePlayer(gp) id number from the url
@@ -117,6 +95,7 @@ function removeDataGridAttribute(){
           gameView(data);
           drawOwnShipLocations(data);
           drawOwnSalvoLocations(data);
+          gameHistory(data);
           if (data.opponent != undefined) { //if there's no opponent do not add their ship and salvo data to the grids
                 locateOpponentShipLocations(data);
                 locateOpponentSalvoLocations(data);
@@ -128,6 +107,59 @@ function removeDataGridAttribute(){
       showOutput( "Failed: " + textStatus );
     });
   }
+
+  // display text in the output area
+  function showOutput(text) {
+    $("#output").text(text);
+  }
+
+  //get data from JSON and create a new variable which contains the game Id, creation date and players and present this in a string
+    function gameView(data) {
+          var game = {};
+          game.id = data.gameView.gameId;
+          game.created = new Date(data.gameView.created);
+          game.you = data.you.player.nickname;
+          if (data.opponent != undefined) { //if there is an opponent fill in their details
+              opponent = data.opponent.player.nickname;
+              $("#output").html("<h2>" + "You (<b>" + game.you + "</b>) are playing against <b>" + opponent + "</b></h2>" +
+              "<h3><i>"+"Game: " + game.id +", Created on: " + game.created + "</i></h3>");
+          }
+          else { //if there's no opponent
+              $("#output").html("<h2 class='warning'>" + "Game awaiting Opponent</h2>" +
+              "<h3><i>"+"Game: " + game.id +", Created on: " + game.created + "</i></h3>");
+          }
+      }
+
+    //get data from JSON and create a new variable which contains the game Id, creation date and players and present this in a string
+//    function gameHistory(data) {
+//    var turn = {};
+//         data.hits.map(function(turnData) {
+//
+//            turn.number = turnData.turn;
+//            turn.hits1 = " Aircraft Carrier: " + turnData.hitsOnYou.aircraftCarrierHit;
+//            turn.hits2 = " Battleship: " + turnData.hitsOnYou.battleshipHit;
+//            turn.hits3 = " Submarine: " + turnData.hitsOnYou.submarineHit;
+//            turn.hits4 = " Destroyer: " + turnData.hitsOnYou.destroyerHit;
+//            turn.hits5 = " Patrol Boat: " + turnData.hitsOnYou.patrolBoatHit;
+//            turn.oppShipsLeft = turnData.hitsOnYou.shipsLeft;
+//            turn.hits6 = " Aircraft Carrier: " + turnData.hitsOnOpp.aircraftCarrierHit;
+//            turn.hits7 = " Battleship: " + turnData.hitsOnOpp.battleshipHit;
+//            turn.hits8 = " Submarine: " + turnData.hitsOnOpp.submarineHit;
+//            turn.hits9 = " Destroyer: " + turnData.hitsOnOpp.destroyerHit;
+//            turn.hits10 = " Patrol Boat: " + turnData.hitsOnOpp.patrolBoatHit;
+//            turn.yourShipsLeft = turnData.hitsOnOpp.shipsLeft;
+//
+//            $("#gameHistory").append("<tr>" + "<td>" + turn.number + "</td>"
+//                                            + "<td>" + turn.hits1 + turn.hits2 + turn.hits3 + turn.hits4 + "</td>"
+//                                            + "<td>" + turn.oppShipsLeft+ "</td>"
+//                                            + "<td>" + turn.hits6 + turn.hits7 + turn.hits8 + turn.hits9 + turn.hits10 + "</td>"
+//                                            + "<td>" + turn.yourShipsLeft + "</td>" + "</tr>");
+//         });
+//  }
+
+
+  //determine ships sunk per turn
+//  function returnSunkShips()
 
 //method to draw players own ships on their grid
   function drawOwnShipLocations(data){
