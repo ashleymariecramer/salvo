@@ -252,7 +252,27 @@ button.active {
 }
 
 .toFire{
-    background-color: HotPink;
+    background-color: Tomato;
     border: 1px solid Black;
     color: Black;
+}
+
+.you{
+color: CadetBlue;
+}
+
+.opponent{
+color: DarkCyan;
+}
+
+.youContent{
+background-color: CadetBlue;
+}
+
+.opponentContent{
+background-color: DarkCyan;
+}
+
+.turn{
+background-color: SlateGrey;
 }

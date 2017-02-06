@@ -131,35 +131,65 @@ function removeDataGridAttribute(){
       }
 
     //get data from JSON and create a new variable which contains the game Id, creation date and players and present this in a string
-//    function gameHistory(data) {
-//    var turn = {};
-//         data.hits.map(function(turnData) {
-//
-//            turn.number = turnData.turn;
-//            turn.hits1 = " Aircraft Carrier: " + turnData.hitsOnYou.aircraftCarrierHit;
-//            turn.hits2 = " Battleship: " + turnData.hitsOnYou.battleshipHit;
-//            turn.hits3 = " Submarine: " + turnData.hitsOnYou.submarineHit;
-//            turn.hits4 = " Destroyer: " + turnData.hitsOnYou.destroyerHit;
-//            turn.hits5 = " Patrol Boat: " + turnData.hitsOnYou.patrolBoatHit;
-//            turn.oppShipsLeft = turnData.hitsOnYou.shipsLeft;
-//            turn.hits6 = " Aircraft Carrier: " + turnData.hitsOnOpp.aircraftCarrierHit;
-//            turn.hits7 = " Battleship: " + turnData.hitsOnOpp.battleshipHit;
-//            turn.hits8 = " Submarine: " + turnData.hitsOnOpp.submarineHit;
-//            turn.hits9 = " Destroyer: " + turnData.hitsOnOpp.destroyerHit;
-//            turn.hits10 = " Patrol Boat: " + turnData.hitsOnOpp.patrolBoatHit;
-//            turn.yourShipsLeft = turnData.hitsOnOpp.shipsLeft;
-//
-//            $("#gameHistory").append("<tr>" + "<td>" + turn.number + "</td>"
-//                                            + "<td>" + turn.hits1 + turn.hits2 + turn.hits3 + turn.hits4 + "</td>"
-//                                            + "<td>" + turn.oppShipsLeft+ "</td>"
-//                                            + "<td>" + turn.hits6 + turn.hits7 + turn.hits8 + turn.hits9 + turn.hits10 + "</td>"
-//                                            + "<td>" + turn.yourShipsLeft + "</td>" + "</tr>");
-//         });
-//  }
+    function gameHistory(data) {
+    if (data.hits.length == 0){
+        $(".gameHistory").hide(); //if no game history available hide gameHistory table
+    }
+    else {
+     var turn = {};
+             data.hits.map(function(turnData) {
+                turn.number = turnData.turn;
+                turn.sunkYou = turnData.hitsOnYou.shipsSunk;
+                turn.leftYou = turnData.hitsOnYou.shipsLeft;
+                turn.sunkOpp = turnData.hitsOnOpp.shipsSunk;
+                turn.leftOpp = turnData.hitsOnOpp.shipsLeft;
+                turn.shipsHitYou = returnShipsHit(turnData.hitsOnYou.hitsPerTurn.shipsHit);
+                turn.shipsHitOpp = returnShipsHit(turnData.hitsOnOpp.hitsPerTurn.shipsHit);
+
+                $("#gameHistory").append("<tr>" + "<td class='turn'>" + turn.number + "</td>"
+                                                + "<td class='youContent'>" + turn.shipsHitYou + "</td>"
+                                                + "<td class='youContent'>" + turn.sunkYou + "</td>"
+                                                + "<td class='youContent'>" + turn.leftYou + "</td>"
+                                                + "<td class='opponentContent'>" + turn.shipsHitOpp + "</td>"
+                                                + "<td class='opponentContent'>" + turn.sunkOpp + "</td>"
+                                                + "<td class='opponentContent'>" + turn.leftOpp + "</td>"
+                                                + "</tr>");
+             });
+    }
+  }
 
 
   //determine ships sunk per turn
-//  function returnSunkShips()
+  function returnShipsHit(data){
+  var shipsHit = "";
+  var string1 = "";
+  var string2 = "";
+  var string3 = "";
+  var string4 = "";
+  var string5 = "";
+  if (data.aircraftCarrier != undefined){
+       aircraftCarrier = data.aircraftCarrier;
+       var string1 = "Aircraft Carrier: " + data.aircraftCarrier + " ";
+       };
+  if (data.battleship != undefined){
+        battleship = data.battleship;
+        var string2 = "Battleship: " + data.battleship + " ";
+        };
+  if (data.destroyer != undefined){
+         destroyer = data.destroyer;
+         var string3 = "Destroyer: " + data.destroyer + " ";
+         };
+  if (data.submarine != undefined){
+         submarine = data.submarine;
+         var string4 = "Submarine: " + data.submarine + " ";
+          };
+  if (data.patrolBoat != undefined){
+         patrolBoat = data.patrolBoat;
+         var string5 = "Patrol Boat: " + data.patrolBoat + " ";
+          };
+  return shipsHit.concat(string1, string2, string3, string4, string5);
+  }
+
 
 //method to draw players own ships on their grid
   function drawOwnShipLocations(data){

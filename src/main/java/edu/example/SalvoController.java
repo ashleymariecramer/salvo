@@ -260,25 +260,25 @@ public class SalvoController {
 
         Integer sunkShips = 0;
         List sunkShipList = new ArrayList();
-        if (Collections.frequency(hitsOverall, "Aircraft Carrier") == 5) {
+        if (Collections.frequency(hitsOverall, "aircraftCarrier") == 5) {
             sunkShips += 1;
-            sunkShipList.add("Aircraft Carrier");
+            sunkShipList.add(" Aircraft Carrier");
         }
-        if (Collections.frequency(hitsOverall, "Battleship") == 4) {
+        if (Collections.frequency(hitsOverall, "battleship") == 4) {
             sunkShips += 1;
-            sunkShipList.add("Battleship");
+            sunkShipList.add(" Battleship");
         }
-        if (Collections.frequency(hitsOverall, "Submarine") == 3) {
+        if (Collections.frequency(hitsOverall, "submarine") == 3) {
             sunkShips += 1;
-            sunkShipList.add("Submarine");
+            sunkShipList.add(" Submarine");
         }
-        if (Collections.frequency(hitsOverall, "Destroyer") == 3) {
+        if (Collections.frequency(hitsOverall, "destroyer") == 3) {
             sunkShips += 1;
-            sunkShipList.add("Destroyer");
+            sunkShipList.add(" Destroyer");
         }
-        if (Collections.frequency(hitsOverall, "Patrol Boat") == 2) {
+        if (Collections.frequency(hitsOverall, "patrolBoat") == 2) {
             sunkShips += 1;
-            sunkShipList.add("Patrol Boat");
+            sunkShipList.add(" Patrol Boat");
         }
 
         dto.put("hitsPerTurn", makeTurnHitsDTO(hitsPerTurn));
@@ -524,146 +524,3 @@ public class SalvoController {
 
 /** End of all functions **/
 } //Do not delete!! End of function
-
-/*
-        dto.put("hitsOnOpp", gamePlayer.getSalvo().stream().map(salvo -> makeHitStatsDTO(salvo, hitsOverall)).collect(toList()));
-
-        dto.put("hitsOnYou", gamePlayer.getGame().getGamePlayers().stream().filter(gp -> gp.getId() != gamePlayerId)
-                    .findFirst().get().getSalvo().stream().map(salvo -> makeHitStatsDTO(salvo, hitsOverall)).collect(toList()));
-
-    //this passes through all the data of one players salvos and the opposing player ships
-    private Map<String, Object> makeHitStatsDTO(Salvo salvo, List hitsOverall) {
-        Map<String, Object> dto = new LinkedHashMap<String, Object>();
-        dto.put("turn", salvo.getTurn());
-        Long gpId = salvo.getGamePlayer().getId(); //needed to determine opponent (ie not this gp)
-        List<String> hitsPerTurn = new ArrayList<>(); //this will have name of hit ships passed to it
-        List mySalvoLocations = salvo.getLocations(); // This gets my salvoes
-        Set<Ship> oppShips = salvo.getGamePlayer().getGame().getGamePlayers().stream().filter(gp -> gp.getId() != gpId)
-                .findFirst().get().getShip();
-
-        for (Object mySalvoLocation : mySalvoLocations) { //for each different salvo location
-            for (Ship oppShip : oppShips) {
-                String type = oppShip.getType();
-                List shipLocations = oppShip.getLocations();
-                if (shipLocations.contains(mySalvoLocation)) { //check if ship locations contains same location as the salvo
-                    hitsPerTurn.add(type); //if so push ship type to the hits array for this turn
-                    hitsOverall.add(type); //if so push ship type to the hits array for all turns so far
-                } //end of if
-            } //end of ships loop
-        } //ASK: How can this be written as a stream????
-
-        Integer sunkShips = 0;
-        if (Collections.frequency(hitsOverall, "Aircraft Carrier") == 5) {
-            sunkShips += 1;
-        }
-        if (Collections.frequency(hitsOverall, "Battleship") == 4) {
-            sunkShips += 1;
-        }
-        if (Collections.frequency(hitsOverall, "Submarine") == 3) {
-            sunkShips += 1;
-        }
-        if (Collections.frequency(hitsOverall, "Destroyer") == 3) {
-            sunkShips += 1;
-        }
-        if (Collections.frequency(hitsOverall, "Patrol Boat") == 2) {
-            sunkShips += 1;
-        }
-
-        dto.put("hitsPerTurn", hitsPerTurn);  // this gets an array with the names of the ships hit on that turn
-        dto.put("aircraftCarrierHit", Collections.frequency(hitsPerTurn, "Aircraft Carrier"));
-        dto.put("battleshipHit", Collections.frequency(hitsPerTurn, "Battleship"));
-        dto.put("submarineHit", Collections.frequency(hitsPerTurn, "Submarine"));
-        dto.put("destroyerHit", Collections.frequency(hitsPerTurn, "Destroyer"));
-        dto.put("patrolBoatHit", Collections.frequency(hitsPerTurn, "Patrol Boat"));
-
-        dto.put("hitsOverall", hitsOverall);
-        dto.put("aircraftCarrierSunk", (Collections.frequency(hitsOverall, "Aircraft Carrier") == 5));
-        dto.put("battleshipSunk", (Collections.frequency(hitsOverall, "Battleship") == 4));
-        dto.put("submarineSunk", (Collections.frequency(hitsOverall, "Submarine") == 3));
-        dto.put("destroyerSunk", (Collections.frequency(hitsOverall, "Destroyer") == 3));
-        dto.put("patrolBoatSunk", (Collections.frequency(hitsOverall, "Patrol Boat") == 2));
-
-        dto.put("shipsLeft", 5 - sunkShips);
-
-        return dto;
-    }
-
-Rrturns the following format:
-
-
-"hitsOnYou" : [ {
-    "turn" : 1,
-    "hitsPerTurn" : [ "Patrol Boat", "Patrol Boat" ],
-    "aircraftCarrierHit" : 0,
-    "battleshipHit" : 0,
-    "submarineHit" : 0,
-    "destroyerHit" : 0,
-    "patrolBoatHit" : 2,
-    "hitsOverall" : [ "Destroyer", "Destroyer", "Patrol Boat", "Patrol Boat", "Destroyer", "Patrol Boat", "Patrol Boat", "Submarine", "Destroyer" ],
-    "aircraftCarrierSunk" : false,
-    "battleshipSunk" : false,
-    "submarineSunk" : false,
-    "destroyerSunk" : true,
-    "patrolBoatSunk" : false,
-    "shipsLeft" : 4
-  }, {
-    "turn" : 2,
-    "hitsPerTurn" : [ "Submarine", "Destroyer" ],
-    "aircraftCarrierHit" : 0,
-    "battleshipHit" : 0,
-    "submarineHit" : 1,
-    "destroyerHit" : 1,
-    "patrolBoatHit" : 0,
-    "hitsOverall" : [ "Destroyer", "Destroyer", "Patrol Boat", "Patrol Boat", "Destroyer", "Patrol Boat", "Patrol Boat", "Submarine", "Destroyer" ],
-    "aircraftCarrierSunk" : false,
-    "battleshipSunk" : false,
-    "submarineSunk" : false,
-    "destroyerSunk" : false,
-    "patrolBoatSunk" : false,
-    "shipsLeft" : 5
-  } ]
-
-
-version 2:
-    private Map<String, Object> makeTurnHitsDTO(List hitsPerTurn) {
-        Map<String, Integer> shipsHit = new LinkedHashMap<String, Integer>();
-        Map<String, Integer> shipsSunk = new LinkedHashMap<String, Integer>();
-        for (Object ship : hitsPerTurn) {
-            String type = ship.toString();
-            if (shipsHit.containsKey(type)){ //if ship name is already included in the 'shipsHit' array
-                int existingVal = shipsHit.get(type); //get the number if hits
-                int newVal = existingVal + 1; // increase them by 1
-                shipsHit.remove(type);
-                shipsHit.put(type, newVal); //
-            } else {
-                shipsHit.put(type, 1);
-            }
-        }
-
-        Map<String, Object> dto = new LinkedHashMap<String, Object>();
-        dto.put("shipsHit", shipsHit);
-        return dto;
-    }
-
-
-returns the following foramt:
-"hits" : [ {
-    "turn" : 2,
-    "hitsOnOpp" : {
-      "turn" : 2,
-      "hitsPerTurn" : {
-        "shipsHit" : {
-          "Patrol Boat" : 1,
-          "Destroyer" : 2
-        }
-      },
-      "aircraftCarrierSunk" : false,
-      "battleshipSunk" : false,
-      "submarineSunk" : false,
-      "destroyerSunk" : false,
-      "patrolBoatSunk" : false,
-      "shipsLeft" : 5
-    },
-    "hitsOnYou" : {
-
- */
