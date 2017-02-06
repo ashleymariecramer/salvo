@@ -559,7 +559,7 @@ public class SalvoController {
 
     /************************* API /GAME HISTORY (get details by turn) ********************************/
     //10. Game History
-    @RequestMapping(path = "/games/players/{gpId}/gameHistory", method = RequestMethod.GET)
+    @RequestMapping(path = "/gameHistory/{gpId}", method = RequestMethod.GET)
     public Map<String, Object> getGameHistoryByPlayer(@PathVariable Long gamePlayerId, Authentication authentication) {
         Map<String, Object> dto = new LinkedHashMap<String, Object>();
         GamePlayer gamePlayer = gpRepo.findOne(gamePlayerId);

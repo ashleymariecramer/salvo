@@ -295,7 +295,7 @@ function addShips(){
 //ajax call to the api to get the JSON data - if successful it uses data to draw the game view if not it returns an error
   function loadGameHistoryData() {
     var gp = getGamePlayerIdFromURL(); //gets the gamePlayer(gp) id number from the url
-    var url = "/api/games/players/"+gp+"/gameHistory"; //inserts the gp id number into the api
+    var url = "/api/gameHistory/"+gp; //inserts the gp id number into the api
     $.getJSON(url)
     .done(function(data) {
     // this checks if user is trying to access a gameView for a game they are not a player in
