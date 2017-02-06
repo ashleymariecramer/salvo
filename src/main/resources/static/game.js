@@ -9,6 +9,7 @@ $(function() {
    rotateShips();
    getPlacedShipDetails();
    getSalvoPositions();
+//   loadGameHistoryData();
 });
 
 /* Global variable */
@@ -98,9 +99,7 @@ function removeDataGridAttribute(){
           gameHistory(data);
           if (data.opponent != undefined) { //if there's no opponent do not add their ship and salvo data to the grids
                 locateOpponentSalvoLocations(data);
-
-                locateOpponentShipLocations(data);  //TODO: should not add a specific class so that opponent ships locations data not accessible
-//                determineHitsOnOpp(); //TODO: this should check in the same step if a oppship  & own salvo have same location and if so add 'hit'
+                determineHitsOnOpp(data); //TODO: this should check in the same step if a oppship  & own salvo have same location and if so add 'hit'
           }
           determineHitsOnYou();
         }
@@ -134,7 +133,7 @@ function removeDataGridAttribute(){
 
     //get data from JSON and create a new variable which contains the game Id, creation date and players and present this in a string
     function gameHistory(data) {
-    if (data.hits.length == 0){
+    if (data.hits == undefined ){
         $(".gameHistory").hide(); //if no game history available hide gameHistory table
     }
     else {
@@ -205,17 +204,28 @@ function removeDataGridAttribute(){
             }
   }
 //method to draw opponents ships on their grid
-  function locateOpponentShipLocations(data){
-        for (var i = 0; i < data.opponentShips.length; i++){
-                    for (var j = 0; j < data.opponentShips[i].locations.length; j++){
-                        var location = data.opponentShips[i].locations[j];
-                        $("#opponentGrid > tr > td."+location).removeClass("mySalvoes").addClass("hit"); //only adds ships to own grid
-                        } //TODO: need to remove this later as it should not be accessible for players
-                    }
+  function determineHitsOnOpp(data){
+        if ( data.opponentShips.length > 0 ) {
+            for (var i = 0; i < data.opponentShips.length; i++){
+                        for (var j = 0; j < data.opponentShips[i].locations.length; j++){
+                            var location = data.opponentShips[i].locations[j];
+                            if ( $("#opponentGrid > tr > td."+location).hasClass("mySalvoes") ){
+                                $("#opponentGrid > tr > td."+location).removeClass("mySalvoes").addClass("hit");
+                                //if salvoes have same location as ships show hit
+                            }
+                        }
+            }
+        }
+        else {
+            if (data.yourShips.length != 0) {
+            $("#gameStatus").html("<h2 class='gameStatus'>" + "Waiting for Opponent to place ships</h2>");
+            }
+        }
   }
 
 //method to draw players own salvos on opponent grid
   function drawOwnSalvoLocations(data){
+      if ( data.yourSalvoes.length > 0 ) {
         for (var i = 0; i < data.yourSalvoes.length; i++){
             for (var j = 0; j < data.yourSalvoes[i].locations.length; j++){
                 var location = data.yourSalvoes[i].locations[j];
@@ -224,9 +234,16 @@ function removeDataGridAttribute(){
 //              $("#ownGrid").children().children("."+location).addClass("ship"); //Alternative for >1 grids
                 }
             }
+      } else {
+          if ( data.yourShips.length > 0  && data.opponentShips.length > 0 ) {
+             $("#gameStatus").html("<h2 class='gameStatus'>" + "Waiting for you to fire Salvoes</h2>");
+          }
+      }
   }
+
 //method to draw opponents salvos on own grid
   function locateOpponentSalvoLocations(data){
+    if ( data.opponentSalvoes.length > 0 ) {
         for (var i = 0; i < data.opponentSalvoes.length; i++){
             for (var j = 0; j < data.opponentSalvoes[i].locations.length; j++){
                 var location = data.opponentSalvoes[i].locations[j];
@@ -234,6 +251,11 @@ function removeDataGridAttribute(){
                 $("#ownGrid > tr > td."+location).addClass("oppSalvoes").html(turn); //only adds ships to own grid
                 }
         }
+    } else {
+         if ( data.yourSalvoes.length > 0  && data.yourShips.length > 0  && data.opponentShips.length > 0 ) {
+            $("#gameStatus").html("<h2 class='gameStatus'>" + "Waiting for opponent to fire Salvoes</h2>");
+         }
+    }
   }
 
 //method to determine if salvos have hit any ships
@@ -412,6 +434,7 @@ function checkShipsNotOverlapped(allShipDetails){
 function showShipPlacementOptions(data){
     if (data.yourShips.length == 0) {
         $(".shipPlacementDiv").show();
+        $("#gameStatus").html("<h2 class='gameStatus'>" + "Waiting for you to place ships</h2>");
     }
 }
 
@@ -529,3 +552,24 @@ function enableFireSalvosButton(salvoLocations){
 //         getPlacedShipDetails(ship, type, shipLength, rotation, startingPosition);
 //     });
 //}
+
+//ajax call to the api to get the JSON data - if successful it uses data to draw the game view if not it returns an error
+  function loadGameHistoryData() {
+    var gp = getGamePlayerIdFromURL(); //gets the gamePlayer(gp) id number from the url
+    var url = "/api/games/players/"+gp+"/gameHistory"; //inserts the gp id number into the api
+    $.getJSON(url)
+    .done(function(data) {
+    // this checks if user is trying to access a gameView for a game they are not a player in
+    // if they are not a player then instead of the gameView data there will be an Error object generated by the controller
+    // with an error status 403 and returns the body error message as an alert
+    if (data.gameView == undefined){
+          alert(data.Error.body);
+        }
+    else{
+          gameHistory(data);
+        }
+    })
+    .fail(function( jqXHR, textStatus ) {
+      showOutput( "Failed: " + textStatus );
+    });
+  }

@@ -178,13 +178,13 @@ public class SalvoController {
         Map<String, Object> dto = new LinkedHashMap<String, Object>();
 //Separate variables for You and Opponent
 
-        List<String> hitsOverallYou = new ArrayList<>(); //this will have cumulative list of hit ships per game so far
-        Integer sunkShipsYou = 0; //This needs to be outside of the turn loops
-        List<String> previouslySunkYou = new ArrayList<>(); //This will determine ships sunk on previous turns so not repeated
-
-        List<String> hitsOverallOpp = new ArrayList<>(); //this will have cumulative list of hit ships per game so far
-        Integer sunkShipsOpp = 0; //This needs to be outside of the turn loops so that it gets added to each time
-        List<String> previouslySunkOpp = new ArrayList<>(); //This will determine ships sunk on previous turns so not repeated
+//        List<String> hitsOverallYou = new ArrayList<>(); //this will have cumulative list of hit ships per game so far
+//        Integer sunkShipsYou = 0; //This needs to be outside of the turn loops
+//        List<String> previouslySunkYou = new ArrayList<>(); //This will determine ships sunk on previous turns so not repeated
+//
+//        List<String> hitsOverallOpp = new ArrayList<>(); //this will have cumulative list of hit ships per game so far
+//        Integer sunkShipsOpp = 0; //This needs to be outside of the turn loops so that it gets added to each time
+//        List<String> previouslySunkOpp = new ArrayList<>(); //This will determine ships sunk on previous turns so not repeated
 
         dto.put("gameView", makeGameDetailsDTO(gamePlayer.getGame()));
         dto.put("you", gamePlayer.getGame().getGamePlayers().stream().filter(gp -> gp.getId() == gamePlayerId)
@@ -201,18 +201,22 @@ public class SalvoController {
                     .findFirst().get().getShip().stream().map(ship -> makeShipDTO(ship)).collect(toList()));
             dto.put("opponentSalvoes", gamePlayer.getGame().getGamePlayers().stream().filter(gp -> gp.getId() != gamePlayerId)
                     .findFirst().get().getSalvo().stream().map(salvo -> makeSalvoDTO(salvo)).collect(toList()));
+
+//    //Include all game history in the optional of if there is an opponent
+//            Set<Salvo> salvoOpps = gamePlayer.getGame().getGamePlayers().stream().filter(gp -> gp.getId() != gamePlayerId)
+//                    .findFirst().get().getSalvo();
+//            //TODO: testing where error is
+//            System.out.println(salvoOpps);
+//
+//            dto.put("hits", gamePlayer.getSalvo().stream().sorted(Comparator.comparing(Salvo::getTurn))
+////            dto.put("hits", gamePlayer.getSalvo().stream()
+//                    .map(salvoYou -> makeTurnStatsDTO(salvoYou, salvoOpps,
+//                            hitsOverallYou, hitsOverallOpp, gamePlayer, gameId, previouslySunkYou, previouslySunkOpp,
+//                            sunkShipsYou, sunkShipsOpp)).collect(toList()));
+//
+////       NOTE:   .sorted((t1, t2) -> t1.getTurn() - t2.getTurn()) can be replaced with a lamda ->
+////               .sorted(Comparator.comparing(Salvo::getTurn))  & adding '.reversed())' reverses the order.
         }
-        Set<Salvo> salvoOpps = gamePlayer.getGame().getGamePlayers().stream().filter(gp -> gp.getId() != gamePlayerId)
-                .findFirst().get().getSalvo();
-
-
-        dto.put("hits", gamePlayer.getSalvo().stream().sorted(Comparator.comparing(Salvo::getTurn))
-                .map(salvoYou -> makeTurnStatsDTO(salvoYou, salvoOpps,
-                hitsOverallYou, hitsOverallOpp, gamePlayer, gameId, previouslySunkYou, previouslySunkOpp,
-                sunkShipsYou, sunkShipsOpp)).collect(toList()));
-
-//       NOTE:   .sorted((t1, t2) -> t1.getTurn() - t2.getTurn()) can be replaced with a lamda ->
-//               .sorted(Comparator.comparing(Salvo::getTurn))  & adding '.reversed())' reverses the order.
 
         return dto;
     }
@@ -238,87 +242,86 @@ public class SalvoController {
         return dto;
     }
 
-    private Map<String, Object> makeTurnStatsDTO(Salvo salvoYou, Set<Salvo> salvoOpps, List hitsOverallYou, List hitsOverallOpp,
-                                                 GamePlayer gamePlayer, Long gamePlayerId, List previouslySunkYou,
-                                                 List previouslySunkOpp, Integer sunkShipsYou, Integer sunkShipsOpp) {
-        Map<String, Object> dto = new LinkedHashMap<String, Object>();
-        dto.put("turn", salvoYou.getTurn());
-        int turn = salvoYou.getTurn();
-        dto.put("hitsOnOpp", makeHitStatsDTO(salvoYou, hitsOverallYou, sunkShipsYou, previouslySunkYou));
-
-//        Optional<Map<String, Object>> opponent = gamePlayer.getGame().getGamePlayers().stream().filter(gp -> gp.getId() != gamePlayerId)
-//                    .findFirst().get();
+//    private Map<String, Object> makeTurnStatsDTO(Salvo salvoYou, Set<Salvo> salvoOpps, List hitsOverallYou, List hitsOverallOpp,
+//                                                 GamePlayer gamePlayer, Long gamePlayerId, List previouslySunkYou,
+//                                                 List previouslySunkOpp, Integer sunkShipsYou, Integer sunkShipsOpp) {
+//        Map<String, Object> dto = new LinkedHashMap<String, Object>();
+//        dto.put("turn", salvoYou.getTurn());
+//        int turn = salvoYou.getTurn();
+//        dto.put("hitsOnOpp", makeHitStatsDTO(salvoYou, hitsOverallYou, sunkShipsYou, previouslySunkYou));
 //
-//        if (opponent.isPresent()) { //TODO: is an optional needed here?
-        Salvo salvoOpp = salvoOpps.stream().filter(s -> s.getTurn() == turn).findFirst().get();
-        dto.put("hitsOnYou", makeHitStatsDTO(salvoOpp, hitsOverallOpp, sunkShipsOpp, previouslySunkOpp));
+////        Optional<Map<String, Object>> opponent = gamePlayer.getGame().getGamePlayers().stream().filter(gp -> gp.getId() != gamePlayerId)
+////                    .findFirst().get();
+////
+////        if (opponent.isPresent()) { //TODO: is an optional needed here?
+//        Salvo salvoOpp = salvoOpps.stream().filter(s -> s.getTurn() == turn).findFirst().get();
+//        dto.put("hitsOnYou", makeHitStatsDTO(salvoOpp, hitsOverallOpp, sunkShipsOpp, previouslySunkOpp));
+////        }
+//        return dto;
+//    }
+
+
+//    //this passes through all the data of one players salvos and the opposing player ships
+//    private Map<String, Object> makeHitStatsDTO(Salvo salvo, List hitsOverall, Integer sunkShips, List previouslySunkShips) {
+//        Map<String, Object> dto = new LinkedHashMap<String, Object>();
+//        Long gpId = salvo.getGamePlayer().getId(); //needed to determine opponent (ie not this gp)
+//        List<String> hitsPerTurn = new ArrayList<>(); //this will have name of hit ships passed to it
+//        List sunkShipList = new ArrayList(); //This needs to be outside of the turn loops //ASK: is this best here????
+//        List mySalvoLocations = salvo.getLocations(); // This gets player's salvoes
+//        Set<Ship> oppShips = salvo.getGamePlayer().getGame().getGamePlayers().stream().filter(gp -> gp.getId() != gpId)
+//                .findFirst().get().getShip(); //this gets the opposing player's ships
+//
+//        for (Object mySalvoLocation : mySalvoLocations) { // for each different salvo location
+//            for (Ship oppShip : oppShips) {
+//                String type = oppShip.getType();
+//                List shipLocations = oppShip.getLocations();
+//                if (shipLocations.contains(mySalvoLocation)) { //check if ship locations contains same location as the salvo
+//                    hitsPerTurn.add(type); //if so push ship type to the hits array for this turn
+//                    hitsOverall.add(type); //if so push ship type to the hits array for all turns so far
+//                }
+//            }
+//        } //ASK: How can this be written as a stream????
+//        if (Collections.frequency(hitsOverall, "aircraftCarrier") == 5) {
+//            sunkShips += 1;
+//            if (previouslySunkShips.contains("aircraftCarrier") == false){
+//                sunkShipList.add(" Aircraft Carrier");
+//                previouslySunkShips.add("aircraftCarrier");
+//            }
 //        }
-        return dto;
-    }
-
-
-    //this passes through all the data of one players salvos and the opposing player ships
-    private Map<String, Object> makeHitStatsDTO(Salvo salvo, List hitsOverall, Integer sunkShips, List previouslySunkShips) {
-        Map<String, Object> dto = new LinkedHashMap<String, Object>();
-        Long gpId = salvo.getGamePlayer().getId(); //needed to determine opponent (ie not this gp)
-        List<String> hitsPerTurn = new ArrayList<>(); //this will have name of hit ships passed to it
-        List sunkShipList = new ArrayList(); //This needs to be outside of the turn loops //ASK: is this best here????
-        List mySalvoLocations = salvo.getLocations(); // This gets player's salvoes
-        Set<Ship> oppShips = salvo.getGamePlayer().getGame().getGamePlayers().stream().filter(gp -> gp.getId() != gpId)
-                .findFirst().get().getShip(); //this gets the opposing player's ships
-
-        for (Object mySalvoLocation : mySalvoLocations) { // for each different salvo location
-            for (Ship oppShip : oppShips) {
-                String type = oppShip.getType();
-                List shipLocations = oppShip.getLocations();
-                if (shipLocations.contains(mySalvoLocation)) { //check if ship locations contains same location as the salvo
-                    hitsPerTurn.add(type); //if so push ship type to the hits array for this turn
-                    hitsOverall.add(type); //if so push ship type to the hits array for all turns so far
-                }
-            }
-        } //ASK: How can this be written as a stream????
-        if (Collections.frequency(hitsOverall, "aircraftCarrier") == 5) {
-            sunkShips += 1;
-            if (previouslySunkShips.contains("aircraftCarrier") == false){
-                sunkShipList.add(" Aircraft Carrier");
-                previouslySunkShips.add("aircraftCarrier");
-            }
-        }
-        if (Collections.frequency(hitsOverall, "battleship") == 4) {
-            sunkShips += 1;
-            if (previouslySunkShips.contains("battleship") == false) {
-                sunkShipList.add(" Battleship");
-                previouslySunkShips.add("battleship");
-            }
-        }
-        if (Collections.frequency(hitsOverall, "submarine") == 3) {
-            sunkShips += 1;
-            if (previouslySunkShips.contains("submarine") == false) {
-                sunkShipList.add(" Submarine");
-                previouslySunkShips.add("submarine");
-            }
-        }
-        if (Collections.frequency(hitsOverall, "destroyer") == 3) {
-            sunkShips += 1;
-            if (previouslySunkShips.contains("destroyer") == false) {
-                sunkShipList.add(" Destroyer");
-                previouslySunkShips.add("destroyer");
-            }
-        }
-        if (Collections.frequency(hitsOverall, "patrolBoat") == 2) {
-            sunkShips += 1;
-            if (previouslySunkShips.contains("patrolBoat") == false) {
-                sunkShipList.add(" Patrol Boat");
-                previouslySunkShips.add("patrolBoat");
-            }
-        }
-
-        dto.put("hitsPerTurn", makeTurnHitsDTO(hitsPerTurn));
-        dto.put("shipsLeft", 5 - sunkShips);
-        dto.put("shipsSunk", sunkShipList);
-        dto.put("allShipsSunkSoFar", previouslySunkShips);
-        return dto;
-    }
+//        if (Collections.frequency(hitsOverall, "battleship") == 4) {
+//            sunkShips += 1;
+//            if (previouslySunkShips.contains("battleship") == false) {
+//                sunkShipList.add(" Battleship");
+//                previouslySunkShips.add("battleship");
+//            }
+//        }
+//        if (Collections.frequency(hitsOverall, "submarine") == 3) {
+//            sunkShips += 1;
+//            if (previouslySunkShips.contains("submarine") == false) {
+//                sunkShipList.add(" Submarine");
+//                previouslySunkShips.add("submarine");
+//            }
+//        }
+//        if (Collections.frequency(hitsOverall, "destroyer") == 3) {
+//            sunkShips += 1;
+//            if (previouslySunkShips.contains("destroyer") == false) {
+//                sunkShipList.add(" Destroyer");
+//                previouslySunkShips.add("destroyer");
+//            }
+//        }
+//        if (Collections.frequency(hitsOverall, "patrolBoat") == 2) {
+//            sunkShips += 1;
+//            if (previouslySunkShips.contains("patrolBoat") == false) {
+//                sunkShipList.add(" Patrol Boat");
+//                previouslySunkShips.add("patrolBoat");
+//            }
+//        }
+//
+//        dto.put("shipsLeft", 5 - sunkShips); //TODO: remove this and use 5 - sunkShipsList.size
+//        dto.put("shipsSunk", sunkShipList);
+//        dto.put("hitsPerTurn", makeTurnHitsDTO(hitsPerTurn));
+//        return dto;
+//    }
 
     //make new object to record only the ships hit per turn
     private Map<String, Object> makeTurnHitsDTO(List hitsPerTurn) {
@@ -519,6 +522,7 @@ public class SalvoController {
         verifyGamePlayer(gpId, authentication);
         int turn = gamePlayer.getSalvo().size() + 1; //gets turn  umber based on current no. of salvos saved to repo
 
+
         salvo.setGamePlayer(gamePlayer);
         salvo.setTurn(turn);
 
@@ -528,7 +532,7 @@ public class SalvoController {
             return new ResponseEntity<>(makeMap("error", "You have already fired salvoes for this turn"), HttpStatus.FORBIDDEN); //403
         }
 
-        Salvo saved = slRepo.save(salvo);
+        slRepo.save(salvo);
         return new ResponseEntity<>(makeMap("salvoIds", salvo.getId()), HttpStatus.CREATED); //201
     }
 
@@ -553,7 +557,120 @@ public class SalvoController {
         return new ResponseEntity<>(makeMap("status", "Player & gamePlayer authorized"), HttpStatus.OK);
     }
 
+    /************************* API /GAME HISTORY (get details by turn) ********************************/
+    //10. Game History
+    @RequestMapping(path = "/games/players/{gpId}/gameHistory", method = RequestMethod.GET)
+    public Map<String, Object> getGameHistoryByPlayer(@PathVariable Long gamePlayerId, Authentication authentication) {
+        Map<String, Object> dto = new LinkedHashMap<String, Object>();
+        GamePlayer gamePlayer = gpRepo.findOne(gamePlayerId);
+        long gameId = gamePlayer.getGame().getId();
+        String playerId = gamePlayer.getPlayer().getUsername();
+        String loggedInUser = getUsername(authentication);
+        if (playerId == loggedInUser) {//if player id for gameplayer & logged are the same -> return game view
 
+            List<String> hitsOverallYou = new ArrayList<>(); //this will have cumulative list of hit ships per game so far
+            Integer sunkShipsYou = 0; //This needs to be outside of the turn loops
+            List<String> previouslySunkYou = new ArrayList<>(); //This will determine ships sunk on previous turns so not repeated
+
+            List<String> hitsOverallOpp = new ArrayList<>(); //this will have cumulative list of hit ships per game so far
+            Integer sunkShipsOpp = 0; //This needs to be outside of the turn loops so that it gets added to each time
+            List<String> previouslySunkOpp = new ArrayList<>(); //This will determine ships sunk on previous turns so not repeated
+
+            //TODO: Include all game history in the optional of if there is an opponent
+            Set<Salvo> salvoOpps = gamePlayer.getGame().getGamePlayers().stream().filter(gp -> gp.getId() != gamePlayerId)
+                    .findFirst().get().getSalvo();
+            dto.put("hits", gamePlayer.getSalvo().stream().sorted(Comparator.comparing(Salvo::getTurn))
+
+                    .map(salvoYou -> makeTurnStatsDTO(salvoYou, salvoOpps,
+                            hitsOverallYou, hitsOverallOpp, gamePlayer, gameId, previouslySunkYou, previouslySunkOpp,
+                            sunkShipsYou, sunkShipsOpp)).collect(toList()));
+        }
+
+        Map<String, Object> result = makeMap("Error", new ResponseEntity<String>("Sorry, you are not a player in this game", HttpStatus.UNAUTHORIZED));
+            return result;
+
+    }
+
+
+    private Map<String, Object> makeTurnStatsDTO(Salvo salvoYou, Set<Salvo> salvoOpps, List hitsOverallYou, List hitsOverallOpp,
+                                                 GamePlayer gamePlayer, Long gamePlayerId, List previouslySunkYou,
+                                                 List previouslySunkOpp, Integer sunkShipsYou, Integer sunkShipsOpp) {
+        Map<String, Object> dto = new LinkedHashMap<String, Object>();
+        dto.put("turn", salvoYou.getTurn());
+        int turn = salvoYou.getTurn();
+        dto.put("hitsOnOpp", makeHitStatsDTO(salvoYou, hitsOverallYou, sunkShipsYou, previouslySunkYou));
+
+//        Optional<Map<String, Object>> opponent = gamePlayer.getGame().getGamePlayers().stream().filter(gp -> gp.getId() != gamePlayerId)
+//                    .findFirst().get();
+//
+//        if (opponent.isPresent()) { //TODO: is an optional needed here?
+        Salvo salvoOpp = salvoOpps.stream().filter(s -> s.getTurn() == turn).findFirst().get();
+        dto.put("hitsOnYou", makeHitStatsDTO(salvoOpp, hitsOverallOpp, sunkShipsOpp, previouslySunkOpp));
+//        }
+        return dto;
+    }
+
+    //this passes through all the data of one players salvos and the opposing player ships
+    private Map<String, Object> makeHitStatsDTO(Salvo salvo, List hitsOverall, Integer sunkShips, List previouslySunkShips) {
+        Map<String, Object> dto = new LinkedHashMap<String, Object>();
+        Long gpId = salvo.getGamePlayer().getId(); //needed to determine opponent (ie not this gp)
+        List<String> hitsPerTurn = new ArrayList<>(); //this will have name of hit ships passed to it
+        List sunkShipList = new ArrayList(); //This needs to be outside of the turn loops //ASK: is this best here????
+        List mySalvoLocations = salvo.getLocations(); // This gets player's salvoes
+        Set<Ship> oppShips = salvo.getGamePlayer().getGame().getGamePlayers().stream().filter(gp -> gp.getId() != gpId)
+                .findFirst().get().getShip(); //this gets the opposing player's ships
+
+        for (Object mySalvoLocation : mySalvoLocations) { // for each different salvo location
+            for (Ship oppShip : oppShips) {
+                String type = oppShip.getType();
+                List shipLocations = oppShip.getLocations();
+                if (shipLocations.contains(mySalvoLocation)) { //check if ship locations contains same location as the salvo
+                    hitsPerTurn.add(type); //if so push ship type to the hits array for this turn
+                    hitsOverall.add(type); //if so push ship type to the hits array for all turns so far
+                }
+            }
+        } //ASK: How can this be written as a stream????
+        if (Collections.frequency(hitsOverall, "aircraftCarrier") == 5) {
+            sunkShips += 1;
+            if (previouslySunkShips.contains("aircraftCarrier") == false){
+                sunkShipList.add(" Aircraft Carrier");
+                previouslySunkShips.add("aircraftCarrier");
+            }
+        }
+        if (Collections.frequency(hitsOverall, "battleship") == 4) {
+            sunkShips += 1;
+            if (previouslySunkShips.contains("battleship") == false) {
+                sunkShipList.add(" Battleship");
+                previouslySunkShips.add("battleship");
+            }
+        }
+        if (Collections.frequency(hitsOverall, "submarine") == 3) {
+            sunkShips += 1;
+            if (previouslySunkShips.contains("submarine") == false) {
+                sunkShipList.add(" Submarine");
+                previouslySunkShips.add("submarine");
+            }
+        }
+        if (Collections.frequency(hitsOverall, "destroyer") == 3) {
+            sunkShips += 1;
+            if (previouslySunkShips.contains("destroyer") == false) {
+                sunkShipList.add(" Destroyer");
+                previouslySunkShips.add("destroyer");
+            }
+        }
+        if (Collections.frequency(hitsOverall, "patrolBoat") == 2) {
+            sunkShips += 1;
+            if (previouslySunkShips.contains("patrolBoat") == false) {
+                sunkShipList.add(" Patrol Boat");
+                previouslySunkShips.add("patrolBoat");
+            }
+        }
+
+        dto.put("shipsLeft", 5 - sunkShips); //TODO: remove this and use 5 - sunkShipsList.size
+        dto.put("shipsSunk", sunkShipList);
+        dto.put("hitsPerTurn", makeTurnHitsDTO(hitsPerTurn));
+        return dto;
+    }
 
 /** End of all functions **/
 } //Do not delete!! End of function

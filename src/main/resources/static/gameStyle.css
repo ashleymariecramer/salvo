@@ -276,3 +276,9 @@ background-color: DarkCyan;
 .turn{
 background-color: SlateGrey;
 }
+
+.gameStatus{
+background-color: DarkCyan;
+color: white;
+padding: 10px;
+}
