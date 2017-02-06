@@ -1,5 +1,6 @@
 package edu.example;
 
+import com.sun.javafx.collections.SortableList;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -203,9 +204,16 @@ public class SalvoController {
         }
         Set<Salvo> salvoOpps = gamePlayer.getGame().getGamePlayers().stream().filter(gp -> gp.getId() != gamePlayerId)
                 .findFirst().get().getSalvo();
-        dto.put("hits", gamePlayer.getSalvo().stream().map(salvoYou -> makeTurnStatsDTO(salvoYou, salvoOpps,
+
+
+        dto.put("hits", gamePlayer.getSalvo().stream().sorted(Comparator.comparing(Salvo::getTurn))
+                .map(salvoYou -> makeTurnStatsDTO(salvoYou, salvoOpps,
                 hitsOverallYou, hitsOverallOpp, gamePlayer, gameId, previouslySunkYou, previouslySunkOpp,
                 sunkShipsYou, sunkShipsOpp)).collect(toList()));
+
+//       NOTE:   .sorted((t1, t2) -> t1.getTurn() - t2.getTurn()) can be replaced with a lamda ->
+//               .sorted(Comparator.comparing(Salvo::getTurn))  & adding '.reversed())' reverses the order.
+
         return dto;
     }
 
