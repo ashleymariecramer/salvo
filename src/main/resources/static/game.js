@@ -97,10 +97,12 @@ function removeDataGridAttribute(){
           drawOwnSalvoLocations(data);
           gameHistory(data);
           if (data.opponent != undefined) { //if there's no opponent do not add their ship and salvo data to the grids
-                locateOpponentShipLocations(data);
                 locateOpponentSalvoLocations(data);
+
+                locateOpponentShipLocations(data);  //TODO: should not add a specific class so that opponent ships locations data not accessible
+//                determineHitsOnOpp(); //TODO: this should check in the same step if a oppship  & own salvo have same location and if so add 'hit'
           }
-          determineHits();
+          determineHitsOnYou();
         }
     })
     .fail(function( jqXHR, textStatus ) {
@@ -207,7 +209,7 @@ function removeDataGridAttribute(){
         for (var i = 0; i < data.opponentShips.length; i++){
                     for (var j = 0; j < data.opponentShips[i].locations.length; j++){
                         var location = data.opponentShips[i].locations[j];
-                        $("#opponentGrid > tr > td."+location).addClass("shipHidden"); //only adds ships to own grid
+                        $("#opponentGrid > tr > td."+location).removeClass("mySalvoes").addClass("hit"); //only adds ships to own grid
                         } //TODO: need to remove this later as it should not be accessible for players
                     }
   }
@@ -235,8 +237,7 @@ function removeDataGridAttribute(){
   }
 
 //method to determine if salvos have hit any ships
-function determineHits(){
-    $(".shipHidden.mySalvoes").removeClass("shipHidden mySalvoes").addClass("hit");
+function determineHitsOnYou(){
     $(".ship.oppSalvoes").removeClass("ship oppSalvoes").addClass("hit");
 }
 
