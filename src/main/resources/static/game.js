@@ -9,7 +9,7 @@ $(function() {
    rotateShips();
    getPlacedShipDetails();
    getSalvoPositions();
-//   loadGameHistoryData();
+   loadGameHistoryData();
 });
 
 /* Global variable */
@@ -96,7 +96,6 @@ function removeDataGridAttribute(){
           gameView(data);
           drawOwnShipLocations(data);
           drawOwnSalvoLocations(data);
-          gameHistory(data);
           if (data.opponent != undefined) { //if there's no opponent do not add their ship and salvo data to the grids
                 locateOpponentSalvoLocations(data);
                 determineHitsOnOpp(data); //TODO: this should check in the same step if a oppship  & own salvo have same location and if so add 'hit'
@@ -105,7 +104,7 @@ function removeDataGridAttribute(){
         }
     })
     .fail(function( jqXHR, textStatus ) {
-      showOutput( "Failed: " + textStatus );
+      showOutput( "Failed: " + textStatus);
     });
   }
 
@@ -113,6 +112,10 @@ function removeDataGridAttribute(){
   function showOutput(text) {
     $("#output").text(text);
   }
+
+   function showOutput2(text) {
+      $("#gameHistoryError").text(text);
+    }
 
   //get data from JSON and create a new variable which contains the game Id, creation date and players and present this in a string
     function gameView(data) {
@@ -133,29 +136,42 @@ function removeDataGridAttribute(){
 
     //get data from JSON and create a new variable which contains the game Id, creation date and players and present this in a string
     function gameHistory(data) {
-    if (data.hits == undefined ){
+    if (data.hits.length == 0) {
         $(".gameHistory").hide(); //if no game history available hide gameHistory table
     }
     else {
-     var turn = {};
-             data.hits.map(function(turnData) {
-                turn.number = turnData.turn;
-                turn.sunkYou = turnData.hitsOnYou.shipsSunk;
-                turn.leftYou = turnData.hitsOnYou.shipsLeft;
-                turn.sunkOpp = turnData.hitsOnOpp.shipsSunk;
-                turn.leftOpp = turnData.hitsOnOpp.shipsLeft;
-                turn.shipsHitYou = returnShipsHit(turnData.hitsOnYou.hitsPerTurn.shipsHit);
-                turn.shipsHitOpp = returnShipsHit(turnData.hitsOnOpp.hitsPerTurn.shipsHit);
+        for (var i = 0; i < data.hits.length; i++) {
+            console.log(i);
+            var turn = data.hits[i].turn;
+            var yourShipsHit = "";
+            var yourSunkShips = "";
+            var yourShipsLeft = "";
+            var oppShipsHit = "";
+            var oppSunkShips = "";
+            var oppShipsLeft = "";
 
-                $("#gameHistory").append("<tr>" + "<td class='turn'>" + turn.number + "</td>"
-                                                + "<td class='youContent'>" + turn.shipsHitYou + "</td>"
-                                                + "<td class='youContent'>" + turn.sunkYou + "</td>"
-                                                + "<td class='youContent'>" + turn.leftYou + "</td>"
-                                                + "<td class='opponentContent'>" + turn.shipsHitOpp + "</td>"
-                                                + "<td class='opponentContent'>" + turn.sunkOpp + "</td>"
-                                                + "<td class='opponentContent'>" + turn.leftOpp + "</td>"
-                                                + "</tr>");
-             });
+            if (data.hits[i].hitsOnYou) {
+                yourShipsHit = returnShipsHit(data.hits[i].hitsOnYou.hitsPerTurn.shipsHit);
+                yourSunkShips = data.hits[i].hitsOnYou.shipsSunk;
+                yourShipsLeft = data.hits[i].hitsOnYou.shipsLeft;
+            }
+            if (data.hits[i].hitsOnOpp) {
+                var oppShipsHit = returnShipsHit(data.hits[i].hitsOnOpp.hitsPerTurn.shipsHit);
+                var oppSunkShips = data.hits[i].hitsOnOpp.shipsSunk;
+                var oppShipsLeft = data.hits[i].hitsOnOpp.shipsLeft;
+            }
+
+            $("#gameHistory").append("<tr>" + "<td class='turn'>" + turn + "</td>"
+                                            + "<td class='youContent'>" + yourShipsHit + "</td>"
+                                            + "<td class='youContent'>" + yourSunkShips + "</td>"
+                                            + "<td class='youContent'>" + yourShipsLeft + "</td>"
+                                            + "<td class='opponentContent'>" + oppShipsHit + "</td>"
+                                            + "<td class='opponentContent'>" + oppSunkShips + "</td>"
+                                            + "<td class='opponentContent'>" + oppShipsLeft + "</td>"
+                                            + "</tr>");
+
+        }
+
     }
   }
 
@@ -293,23 +309,30 @@ function addShips(){
 }
 
 //ajax call to the api to get the JSON data - if successful it uses data to draw the game view if not it returns an error
+//  function loadGameHistoryData() {
+//    var gp = getGamePlayerIdFromURL();//gets the gamePlayer(gp) id number from the url
+////    var url = "/api/gameHistory/"+gp //inserts the gp id number into the api
+////    $.getJSON(url)
+//    $.getJSON({
+//              url: "/api/gameHistory/" + gp,
+//              contentType: "application/json"
+//            })
+//    .done(function(data) {
+//    gameHistory(data);
+//    })
+//    .fail(function( jqXHR, textStatus ) {
+//      showOutput2( "Failed: " + textStatus);
+//    });
+//  }
+
   function loadGameHistoryData() {
     var gp = getGamePlayerIdFromURL(); //gets the gamePlayer(gp) id number from the url
-    var url = "/api/gameHistory/"+gp; //inserts the gp id number into the api
-    $.getJSON(url)
+    $.getJSON("/api/gameHistory/"+gp) //TODO: the error is caused by this url when its called after firing salvoes
     .done(function(data) {
-    // this checks if user is trying to access a gameView for a game they are not a player in
-    // if they are not a player then instead of the gameView data there will be an Error object generated by the controller
-    // with an error status 403 and returns the body error message as an alert
-    if (data.gameView == undefined){
-          alert(data.Error.body);
-        }
-    else{
           gameHistory(data);
-        }
-    })
+          })
     .fail(function( jqXHR, textStatus ) {
-      showOutput( "Failed: " + textStatus );
+      showOutput2( "Failed: " + textStatus );
     });
   }
 
@@ -474,6 +497,7 @@ function fireSalvoes(salvoLocations){
           alert( "Salvoes added!");
           location.reload();
           console.log(data);
+          loadGameHistoryData();
         })
         .fail(function(data) {
         console.log(data);

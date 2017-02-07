@@ -559,14 +559,18 @@ public class SalvoController {
 
     /************************* API /GAME HISTORY (get details by turn) ********************************/
     //10. Game History
-    @RequestMapping(path = "/gameHistory/{gpId}", method = RequestMethod.GET)
+//    @RequestMapping(path = "/gameHistory/{gamePlayerId}", method = RequestMethod.GET)
+    @RequestMapping(path = "/gameHistory/{gamePlayerId}", method = RequestMethod.GET)
     public Map<String, Object> getGameHistoryByPlayer(@PathVariable Long gamePlayerId, Authentication authentication) {
         Map<String, Object> dto = new LinkedHashMap<String, Object>();
         GamePlayer gamePlayer = gpRepo.findOne(gamePlayerId);
         long gameId = gamePlayer.getGame().getId();
         String playerId = gamePlayer.getPlayer().getUsername();
         String loggedInUser = getUsername(authentication);
-        if (playerId == loggedInUser) {//if player id for gameplayer & logged are the same -> return game view
+        if (playerId != loggedInUser) {//if player id for gameplayer & logged are not the same give error
+            Map<String, Object> result = makeMap("Error", new ResponseEntity<String>("Sorry, you are not a player in this game", HttpStatus.UNAUTHORIZED));
+            return result;
+        }
 
             List<String> hitsOverallYou = new ArrayList<>(); //this will have cumulative list of hit ships per game so far
             Integer sunkShipsYou = 0; //This needs to be outside of the turn loops
@@ -580,15 +584,11 @@ public class SalvoController {
             Set<Salvo> salvoOpps = gamePlayer.getGame().getGamePlayers().stream().filter(gp -> gp.getId() != gamePlayerId)
                     .findFirst().get().getSalvo();
             dto.put("hits", gamePlayer.getSalvo().stream().sorted(Comparator.comparing(Salvo::getTurn))
-
                     .map(salvoYou -> makeTurnStatsDTO(salvoYou, salvoOpps,
                             hitsOverallYou, hitsOverallOpp, gamePlayer, gameId, previouslySunkYou, previouslySunkOpp,
                             sunkShipsYou, sunkShipsOpp)).collect(toList()));
-        }
 
-        Map<String, Object> result = makeMap("Error", new ResponseEntity<String>("Sorry, you are not a player in this game", HttpStatus.UNAUTHORIZED));
-            return result;
-
+          return dto;
     }
 
 
@@ -600,12 +600,13 @@ public class SalvoController {
         int turn = salvoYou.getTurn();
         dto.put("hitsOnOpp", makeHitStatsDTO(salvoYou, hitsOverallYou, sunkShipsYou, previouslySunkYou));
 
-//        Optional<Map<String, Object>> opponent = gamePlayer.getGame().getGamePlayers().stream().filter(gp -> gp.getId() != gamePlayerId)
-//                    .findFirst().get();
-//
+
 //        if (opponent.isPresent()) { //TODO: is an optional needed here?
-        Salvo salvoOpp = salvoOpps.stream().filter(s -> s.getTurn() == turn).findFirst().get();
-        dto.put("hitsOnYou", makeHitStatsDTO(salvoOpp, hitsOverallOpp, sunkShipsOpp, previouslySunkOpp));
+        Optional<Salvo> optionalSalvoes = salvoOpps.stream().filter(s -> s.getTurn() == turn).findFirst();
+        if (optionalSalvoes.isPresent()) {
+            dto.put("hitsOnYou", makeHitStatsDTO(optionalSalvoes.get(), hitsOverallOpp, sunkShipsOpp, previouslySunkOpp));
+        }
+
 //        }
         return dto;
     }
