@@ -283,9 +283,10 @@ function determineHitsOnYou(){
 function addShips(){
     $("#add_ships").click(function(evt){
         var gpId = getGamePlayerIdFromURL(); //gets the gamePlayer(gp) id number from the url
-        var overlapped = checkShipsNotOverlapped(allShipDetails);
-        console.log(overlapped);
-        if (overlapped == true){
+//        var overlapped = checkShipsOverlapped(allShipDetails);
+//        console.log(overlapped);
+//        if (overlapped == true){
+        if ( checkShipsOverlapped(allShipDetails) ){
             alert( "Ships overlapping, please move them!");
             return;
         }
@@ -454,7 +455,7 @@ function buildJsonToAddShips(ship, type){
 }
 
 //This checks that no ships are overlapping before posting to back-end)
-function checkShipsNotOverlapped(allShipDetails){
+function checkShipsOverlapped(allShipDetails){
     var arr1 = allShipDetails[0].locations;
     var arr2 = allShipDetails[1].locations;
     var arr3 = allShipDetails[2].locations;
@@ -463,16 +464,15 @@ function checkShipsNotOverlapped(allShipDetails){
     var allLocations = arr1.concat(arr2, arr3, arr4, arr5);
     console.log(arr1, arr2, arr3, arr4, arr5);
     console.log("allLocations: ");
+    console.log(allLocations);
+    var result;
     for (var i = 0; i < allLocations.length; i++){
-        var result = jQuery.inArray(allLocations[i], allLocations, i+1);
-        if (result == -1){
-            return false; //This means there are no duplicate locations so overlapping is false
-        }
-        else{
-             return true; //This means there are no duplicate locations so overlapping is false
+        result = jQuery.inArray(allLocations[i], allLocations, i+1);
+        if (result != -1){
+            return true; //This means there ARE duplicate locations so overlapping is true
         }
     }
-
+    return false; //This means there are no duplicate locations so overlapping is false
 }
 
 function showShipPlacementOptions(data){
