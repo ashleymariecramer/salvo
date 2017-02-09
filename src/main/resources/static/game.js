@@ -101,6 +101,9 @@ function removeDataGridAttribute(){
                 determineHitsOnOpp(data); //TODO: this should check in the same step if a oppship  & own salvo have same location and if so add 'hit'
           }
           determineHitsOnYou();
+          if (data.you.player.score != null){ //if game is over get gameResult
+                getGameResult(data);
+          }
         }
     })
     .fail(function( jqXHR, textStatus ) {
@@ -141,7 +144,6 @@ function removeDataGridAttribute(){
     }
     else {
         for (var i = 0; i < data.hits.length; i++) {
-            console.log(i);
             var turn = data.hits[i].turn;
             var yourShipsHit = "";
             var yourSunkShips = "";
@@ -171,7 +173,7 @@ function removeDataGridAttribute(){
                                             + "</tr>");
 
         }
-
+     gameOver(data);
     }
   }
 
@@ -221,6 +223,7 @@ function removeDataGridAttribute(){
   }
 //method to draw opponents ships on their grid
   function determineHitsOnOpp(data){
+  var checkStatusId;
         if ( data.opponentShips.length > 0 ) {
             for (var i = 0; i < data.opponentShips.length; i++){
                         for (var j = 0; j < data.opponentShips[i].locations.length; j++){
@@ -231,10 +234,12 @@ function removeDataGridAttribute(){
                             }
                         }
             }
+            stopCheckGameStatus(checkStatusId);
         }
         else {
             if (data.yourShips.length != 0) {
             $("#gameStatus").html("<h2 class='gameStatus'>" + "Waiting for Opponent to place ships</h2>");
+            checkStatusId = startCheckGameStatus(); //Refresh game view and game history
             }
         }
   }
@@ -259,6 +264,7 @@ function removeDataGridAttribute(){
 
 //method to draw opponents salvos on own grid
   function locateOpponentSalvoLocations(data){
+  var checkStatusId;
     if ( data.opponentSalvoes.length > 0 ) {
         for (var i = 0; i < data.opponentSalvoes.length; i++){
             for (var j = 0; j < data.opponentSalvoes[i].locations.length; j++){
@@ -267,9 +273,11 @@ function removeDataGridAttribute(){
                 $("#ownGrid > tr > td."+location).addClass("oppSalvoes").html(turn); //only adds ships to own grid
                 }
         }
+        stopCheckGameStatus(checkStatusId);
     } else {
          if ( data.yourSalvoes.length > 0  && data.yourShips.length > 0  && data.opponentShips.length > 0 ) {
             $("#gameStatus").html("<h2 class='gameStatus'>" + "Waiting for opponent to fire Salvoes</h2>");
+         checkStatusId = startCheckGameStatus(); //Refresh game view and game history
          }
     }
   }
@@ -283,9 +291,6 @@ function determineHitsOnYou(){
 function addShips(){
     $("#add_ships").click(function(evt){
         var gpId = getGamePlayerIdFromURL(); //gets the gamePlayer(gp) id number from the url
-//        var overlapped = checkShipsOverlapped(allShipDetails);
-//        console.log(overlapped);
-//        if (overlapped == true){
         if ( checkShipsOverlapped(allShipDetails) ){
             alert( "Ships overlapping, please move them!");
             return;
@@ -309,23 +314,8 @@ function addShips(){
     });
 }
 
-//ajax call to the api to get the JSON data - if successful it uses data to draw the game view if not it returns an error
-//  function loadGameHistoryData() {
-//    var gp = getGamePlayerIdFromURL();//gets the gamePlayer(gp) id number from the url
-////    var url = "/api/gameHistory/"+gp //inserts the gp id number into the api
-////    $.getJSON(url)
-//    $.getJSON({
-//              url: "/api/gameHistory/" + gp,
-//              contentType: "application/json"
-//            })
-//    .done(function(data) {
-//    gameHistory(data);
-//    })
-//    .fail(function( jqXHR, textStatus ) {
-//      showOutput2( "Failed: " + textStatus);
-//    });
-//  }
 
+//Get information for each turn and fill Game History table
   function loadGameHistoryData() {
     var gp = getGamePlayerIdFromURL(); //gets the gamePlayer(gp) id number from the url
     $.getJSON("/api/gameHistory/"+gp) //TODO: the error is caused by this url when its called after firing salvoes
@@ -337,22 +327,70 @@ function addShips(){
     });
   }
 
-// ASK DRAG: These are the key functions, 1st makes the element with 'draggable' class draggable - can customise type and location of cursor
+function getGameResult(data){  //this is used to get the score data from the back-end and fill in the corresponding game status message
+        var result;
+        if (data.you.player.score == 1.0){
+            result = "Congrats you've won";
+        }
+        if (data.you.player.score == 0){
+            result = "You lost, better luck next time!";
+        }
+        if (data.you.player.score == 0.5){
+            result = "It's a tie!";
+        }
+        $("#gameStatus").html("<h2 class='gameStatus'>" + result);
+}
+
+
+//Get the ships types and locations from front-end and pass them to the back-end then reload page
+function saveGameScore(data, score){ //TODO: need to get score based on who has won
+       var gameId = data.gameId;
+       var playerId = data.playerId;
+        $.post({
+            url: "/api/players/" + playerId + "/gameScores" + "?gameId=" + gameId + "&score=" + score,
+//            data: JSON.stringify( {"gameId": 5, "score": 1} ),
+//
+//          url: "/api/games/players/" + playerId + "/gameScore",
+//          data: JSON.stringify( gameId: , score),
+//          dataType: "text",
+                                           //          contentType: "application/json"
+        })
+        .done(function(data) {
+          alert( "Score added!");
+          location.reload();
+        })
+        .fail(function(data) {
+          alert(data.responseText);
+        })
+}
+
+function gameOver(data){
+var turns = data.hits.length;
+var shipsLeftYou = data.hits[turns-1].hitsOnYou.shipsLeft; //this gets the number of your shipsLeft in the last turn
+var shipsLeftOpp = data.hits[turns-1].hitsOnOpp.shipsLeft; //this gets the number of your shipsLeft in the last turn
+var score = null;
+    if (shipsLeftYou == 0 && shipsLeftOpp == 0 ){
+        alert("Game Over! You tied!");
+        score = 0.5;
+        saveGameScore(data, score);
+    }
+    if (shipsLeftYou == 0 && shipsLeftOpp != 0 ){
+        alert("Game Over! You lost!");
+        score = 0;
+        saveGameScore(data,score);
+    }
+    if (shipsLeftYou != 0 && shipsLeftOpp == 0 ){
+        alert("Game Over! You won!");
+        score = 1;
+        saveGameScore(data, score);
+    }
+
+}
+
+
 function makeElementsDraggable() {
   $('.draggable').draggable({ cursor: "crosshair", cursorAt: { top: 14, left: 14 } });
 }
-
-////ASK DRAG: this makes the draggable object return to its previous location
-//function revertToPreviousLocation() {
-//  $('.draggable').draggable({ revert: true});
-//}
-//
-////ASK DRAG: this cancels return object to its previous location so it can be dragged and more importantly dropped again
-//function cancelRevert() {
-//  $('.draggable').draggable({ revert: false});
-//}
-
-
 
 function getStartingPosition(type, x, y){
         $("#" + type).hide(); //hide just the placed ship momentarily to obtain grid data below it
@@ -365,7 +403,6 @@ function getStartingPosition(type, x, y){
 
 function getPlacedShipDetails(ship, type, shipLength, rotation, startingPosition){
     $(".draggable").mouseup (function(){
-//        cancelRevert(); //ASK  DRAG: 2. this needs to be reset each time the dragged element is released otherwise it keeps returning to previous location
         var ship = $(this);
         var type = $(this).attr("id");  //this get ship type of placed ship - needed for posting ship
         var shipLength = $(this).attr("data-length");  //this gets the length of placed ship - to generate locations
@@ -376,8 +413,6 @@ function getPlacedShipDetails(ship, type, shipLength, rotation, startingPosition
 
         if (startingPosition == undefined){ //ASK DRAG: if the cursor of the mouse is not over you own grid, i.e. it can't obtain a data-grid attribute from the location where ship was dropped
             $(ship).attr("style", "position: relative; top: 0px; left: 0px;"); //resets ship to original location in select ship div
-//            revertToPreviousLocation(); // ASK DRAG: it tells the element to go back to its original location
-//            return alert("ship must be placed correctly on your own grid")
         }
         var locations = calculateShipLocations(rotation, shipLength, startingPosition);
         var ship = {
@@ -479,8 +514,11 @@ function showShipPlacementOptions(data){
     if (data.yourShips.length == 0) {
         $(".shipPlacementDiv").show();
         $("#gameStatus").html("<h2 class='gameStatus'>" + "Waiting for you to place ships</h2>");
+        $("#fire_salvoes").hide();
+        var reminderId = startGamePlayerPrompt("Hey there! Time to place your ships!");
     }
 }
+
 
 //Get the ships types and locations from front-end and pass them to the back-end then reload page
 function fireSalvoes(salvoLocations){
@@ -543,6 +581,43 @@ function enableFireSalvosButton(salvoLocations){
         $("#fire_salvoes").attr("disabled", true);
     }
 }
+
+
+
+//need to make sure the variable checkStatusId is available in stop function
+//var checkStatusId = startCheckGameStatus();
+//stopCheckGameStatus(checkStatusId);
+//var reminderId = startGamePlayerPrompt(message);
+//stopGamePlayerPrompt(reminderId);
+
+//Start and stop the functions to check for game status //TODO: need to do this to refresh game view and gamehistory
+function startCheckGameStatus() {
+  checkStatusId = setInterval(function() {
+//  alert("refreshing data");  //TODO: when finished testing need to remove this and make time longer
+  location.reload();
+  }, 18000); //TODO: change time limit later once know it works
+}
+
+function stopCheckGameStatus(checkStatusId) {
+  clearInterval(checkStatusId);
+}
+
+//Start and stop functions to remind player what is expected of him/her
+
+function startGamePlayerPrompt(message) {
+  reminderId = setTimeout(function() { alert(message); }, 4000); //TODO: change time limit later once know it works
+}
+
+//  reminderId = setTimeout(function() { alert(message); /*this in case you want to repeat it*/
+//    startGamePlayerPrompt(message); }, 4000);
+
+//only needed if we want to stop something before it's happened eg if the player takes the desired action
+function stopGamePlayerPrompt(reminderId) {
+  clearTimeout(reminderId);
+}
+
+
+
 //
 ////TODO: can this be added into getSalvo Positions or best kept separate
 //function buildJsonToAddSalvos(salvoLocations){
