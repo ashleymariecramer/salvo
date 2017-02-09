@@ -35,128 +35,27 @@ public class SalvoController {
     @Autowired
     //this injects an instance of the class SalvoRepository for use by this controller (Dependency Injection)
     private SalvoRepository slRepo;
-
+    @Autowired //this injects an instance of the class GameRepository for use by this controller (Dependency Injection)
+    private SalvoService salvoService;
 
     /****************************** API /GAMES **************************************/
     //1. List of All games to be shown whether user logged in or not
     @RequestMapping(path = "/games", method = RequestMethod.GET)
     public List<Object> getAllGames() {
-        return repo.findAll().stream().map(game -> makeGameDTO(game)).collect(toList());
-    }
-
-    //for each game it returns the id, creation date and the players: with their gpId & player details
-    private Map<String, Object> makeGameDTO(Game game) {
-        Map<String, Object> dto = new LinkedHashMap<>();
-        long gameId = game.getId();
-        dto.put("gameId", game.getId());
-        dto.put("created", game.getCreationDate());
-        dto.put("gamePlayers", game.getGamePlayers().stream().map(gamePlayer -> makeGamePlayerDTO(gamePlayer, gameId))
-                                                    .collect(toList()));
-        //here we need stream because there are more than one game player per game
-        return dto;
-    }
-
-    //for each gameplayer it returns their id and player details
-    private Map<String, Object> makeGamePlayerDTO(GamePlayer gamePlayer, long gameId) {
-        Map<String, Object> dto = new LinkedHashMap<>();
-        dto.put("gamePlayerId", gamePlayer.getId());
-        dto.put("player", makePlayerDTO(gamePlayer.getPlayer(), gameId)); //don´t need to loop here cos a game player only has one player
-        return dto;
-    }
-
-    // the gameplayers details include their playerId, username(email), nickname and score(if game is finished)
-    private Map<String, Object> makePlayerDTO(Player player, long gameId) {
-        Map<String, Object> dto = new LinkedHashMap<>();
-        dto.put("playerId", player.getId());
-        dto.put("username", player.getUsername());
-        dto.put("nickname", player.getNickname());
-        dto.put("score", player.getGameScores().stream().filter(gs -> gs.getGame().getId() == gameId).findFirst()
-                                               .map(g -> g.getScore()).orElse(null));
-        //adding score here makes it clear who the score belongs to
-        return dto;
+        return repo.findAll().stream().map(game -> salvoService.makeGameDTO(game)).collect(toList());
     }
 
 
     /******************************* API /CURRENT USER GAMES ********************************************/
     @RequestMapping(path = "/currentUserGames", method = RequestMethod.GET)
     public Map<String, Object> getUserGames(Authentication authentication) {
-        if (!isGuest(authentication)) { //This checks there is not a guest user
+        if (!salvoService.isGuest(authentication)) { //This checks there is not a guest user
             Player loggedInUser = pRepo.findByUsername(authentication.getName());
-            return makeUserDTO(loggedInUser, authentication);
+            return salvoService.makeUserDTO(loggedInUser, authentication);
         }
-        return makeGuestUserDTO();
+        return salvoService.makeGuestUserDTO();
     }
 
-    /* this returns the players username or 'guest' (if no one logged in) */
-    private String getUsername(Authentication authentication) {
-        if (!isGuest(authentication)) { //This checks there is not a guest user
-            String loggedInUser = pRepo.findByUsername(authentication.getName()).getUsername();
-            return loggedInUser;
-        } else {
-            String loggedInUser = "guest";
-            return loggedInUser;
-        }
-    }
-
-    private boolean isGuest(Authentication authentication) {
-        return authentication == null || authentication instanceof AnonymousAuthenticationToken;
-        //this checks if authentication is null or is an instance the predefined spring security class "AnonymousAuthenticationToken"
-    }
-
-    private Map<String, Object> makeGuestUserDTO() {
-        Map<String, Object> dto = new LinkedHashMap<>();
-        dto.put("player", "guest");
-        return dto;
-    }
-
-    private Map<String, Object> makeUserDTO(Player player, Authentication authentication) {
-        Map<String, Object> dto = new LinkedHashMap<>();
-        dto.put("loggedInPlayer", makeLoggedInPlayersDetailsDTO(player)); // don´t need to loop here cos a game player only has one player
-        dto.put("games", player.getGamePlayers().stream().map(gp -> gp.getId())
-                .map(gpId -> makePlayersGameDetailsDTO(gpId, authentication)).collect(toList()));
-        return dto;
-    }
-
-    private Map<String, Object> makeLoggedInPlayersDetailsDTO(Player player) {
-        Map<String, Object> dto = new LinkedHashMap<>();
-        dto.put("playerId", player.getId());
-        dto.put("username", player.getUsername());
-        dto.put("nickname", player.getNickname());
-        dto.put("gameIdsFinishedGames", player.getGameScores().stream().map(gs -> gs.getGame().getId()).collect(toList()));
-        dto.put("gamePlayerIds", player.getGamePlayers().stream().map(gp -> gp.getId()).collect(toList()));
-        dto.put("games", player.getGamePlayers().stream().map(gp -> gp.getGame().getId()).collect(toList()));
-        return dto;
-    }
-
-    public Map<String, Object> makePlayersGameDetailsDTO(Long gamePlayerId, Authentication authentication) {
-        GamePlayer gamePlayer = gpRepo.findOne(gamePlayerId);
-        long gameId = gamePlayer.getGame().getId();
-        String playerId = gamePlayer.getPlayer().getUsername();
-        String loggedInUser = getUsername(authentication);
-        if (playerId == loggedInUser) {//if player id for gamePlayer & logged are the same -> return game view
-            return makePlayersGamesViewsDTO(gamePlayer, gamePlayerId, gameId);
-        } else {
-            Map<String, Object> result = makeMap("Error",
-                    new ResponseEntity<>("Sorry, you are not a player in this game", HttpStatus.UNAUTHORIZED));
-            return result;
-        }
-    }
-
-    private Map<String, Object> makePlayersGamesViewsDTO(GamePlayer gamePlayer, Long gamePlayerId, Long gameId) {
-        Map<String, Object> dto = new LinkedHashMap<>();
-        dto.put("gameId", gamePlayer.getGame().getId());
-        dto.put("you", gamePlayer.getGame().getGamePlayers().stream().filter(gp -> gp.getId() == gamePlayerId)
-                .findFirst().map(gp -> makeGamePlayerDTO(gp, gameId)).get());
-
-        Optional<Map<String, Object>> opponent = gamePlayer.getGame().getGamePlayers().stream().filter(gp -> gp.getId() != gamePlayerId)
-                .findFirst().map(gp -> makeGamePlayerDTO(gp, gameId));
-        if (opponent.isPresent()) {
-            dto.put("opponent", opponent.get()); // findFirst returns an Optional, as it could be that there is no first to find
-            //So for this reason we can add the conditional to see if it isPresent (ie. has a value) before executing the code
-        } //if there is no optional then this part of the code is skipped
-
-        return dto;
-    }
 
     /*********************************** API /GAME VIEW ****************************************/
     //3. Game View based on gameplayerId
@@ -166,183 +65,15 @@ public class SalvoController {
         GamePlayer gamePlayer = gpRepo.findOne(gamePlayerId);
         long gameId = gamePlayer.getGame().getId();
         String playerId = gamePlayer.getPlayer().getUsername();
-        String loggedInUser = getUsername(authentication);
+        String loggedInUser = salvoService.getUsername(authentication);
         if (playerId == loggedInUser) {//if player id for gameplayer & logged are the same -> return game view
-            return makeGameViewDTO(gamePlayer, gamePlayerId, gameId);
+            return salvoService.makeGameViewDTO(gamePlayer, gamePlayerId, gameId);
         } else {
-            Map<String, Object> result = makeMap("Error", new ResponseEntity<String>("Sorry, you are not a player in this game", HttpStatus.UNAUTHORIZED));
+            Map<String, Object> result = salvoService.makeMap("Error", new ResponseEntity<String>("Sorry, you are not a player in this game", HttpStatus.UNAUTHORIZED));
             return result;
         }
     }
 
-    private Map<String, Object> makeGameViewDTO(GamePlayer gamePlayer, Long gamePlayerId, Long gameId) {
-        Map<String, Object> dto = new LinkedHashMap<String, Object>();
-//Separate variables for You and Opponent
-
-//        List<String> hitsOverallYou = new ArrayList<>(); //this will have cumulative list of hit ships per game so far
-//        Integer sunkShipsYou = 0; //This needs to be outside of the turn loops
-//        List<String> previouslySunkYou = new ArrayList<>(); //This will determine ships sunk on previous turns so not repeated
-//
-//        List<String> hitsOverallOpp = new ArrayList<>(); //this will have cumulative list of hit ships per game so far
-//        Integer sunkShipsOpp = 0; //This needs to be outside of the turn loops so that it gets added to each time
-//        List<String> previouslySunkOpp = new ArrayList<>(); //This will determine ships sunk on previous turns so not repeated
-
-        dto.put("gameView", makeGameDetailsDTO(gamePlayer.getGame()));
-        dto.put("you", gamePlayer.getGame().getGamePlayers().stream().filter(gp -> gp.getId() == gamePlayerId)
-                .findFirst().map(gp -> makeGamePlayerDTO(gp, gameId)).get());
-        dto.put("yourShips", gamePlayer.getShip().stream().map(ship -> makeShipDTO(ship)).collect(toList()));
-        dto.put("yourSalvoes", gamePlayer.getGame().getGamePlayers().stream().filter(gp -> gp.getId() == gamePlayerId)
-                .findFirst().get().getSalvo().stream().map(salvo -> makeSalvoDTO(salvo)).collect(toList()));
-
-        Optional<Map<String, Object>> opponent = gamePlayer.getGame().getGamePlayers().stream().filter(gp -> gp.getId() != gamePlayerId)
-                .findFirst().map(gp -> makeGamePlayerDTO(gp, gameId));
-        if (opponent.isPresent()) {
-            dto.put("opponent", opponent.get());
-            dto.put("opponentShips", gamePlayer.getGame().getGamePlayers().stream().filter(gp -> gp.getId() != gamePlayerId)
-                    .findFirst().get().getShip().stream().map(ship -> makeShipDTO(ship)).collect(toList()));
-            dto.put("opponentSalvoes", gamePlayer.getGame().getGamePlayers().stream().filter(gp -> gp.getId() != gamePlayerId)
-                    .findFirst().get().getSalvo().stream().map(salvo -> makeSalvoDTO(salvo)).collect(toList()));
-
-//    //Include all game history in the optional of if there is an opponent
-//            Set<Salvo> salvoOpps = gamePlayer.getGame().getGamePlayers().stream().filter(gp -> gp.getId() != gamePlayerId)
-//                    .findFirst().get().getSalvo();
-//            //TODO: testing where error is
-//            System.out.println(salvoOpps);
-//
-//            dto.put("hits", gamePlayer.getSalvo().stream().sorted(Comparator.comparing(Salvo::getTurn))
-////            dto.put("hits", gamePlayer.getSalvo().stream()
-//                    .map(salvoYou -> makeTurnStatsDTO(salvoYou, salvoOpps,
-//                            hitsOverallYou, hitsOverallOpp, gamePlayer, gameId, previouslySunkYou, previouslySunkOpp,
-//                            sunkShipsYou, sunkShipsOpp)).collect(toList()));
-//
-////       NOTE:   .sorted((t1, t2) -> t1.getTurn() - t2.getTurn()) can be replaced with a lamda ->
-////               .sorted(Comparator.comparing(Salvo::getTurn))  & adding '.reversed())' reverses the order.
-        }
-
-        return dto;
-    }
-
-    private Map<String, Object> makeGameDetailsDTO(Game game) {
-        Map<String, Object> dto = new LinkedHashMap<String, Object>();
-        dto.put("gameId", game.getId());
-        dto.put("created", game.getCreationDate());
-        return dto;
-    }
-
-    private Map<String, Object> makeShipDTO(Ship ship) {
-        Map<String, Object> dto = new LinkedHashMap<String, Object>();
-        dto.put("type", ship.getType());
-        dto.put("locations", ship.getLocations());
-        return dto;
-    }
-
-    private Map<String, Object> makeSalvoDTO(Salvo salvo) {
-        Map<String, Object> dto = new LinkedHashMap<String, Object>();
-        dto.put("turn", salvo.getTurn());
-        dto.put("locations", salvo.getLocations());
-        return dto;
-    }
-
-//    private Map<String, Object> makeTurnStatsDTO(Salvo salvoYou, Set<Salvo> salvoOpps, List hitsOverallYou, List hitsOverallOpp,
-//                                                 GamePlayer gamePlayer, Long gamePlayerId, List previouslySunkYou,
-//                                                 List previouslySunkOpp, Integer sunkShipsYou, Integer sunkShipsOpp) {
-//        Map<String, Object> dto = new LinkedHashMap<String, Object>();
-//        dto.put("turn", salvoYou.getTurn());
-//        int turn = salvoYou.getTurn();
-//        dto.put("hitsOnOpp", makeHitStatsDTO(salvoYou, hitsOverallYou, sunkShipsYou, previouslySunkYou));
-//
-////        Optional<Map<String, Object>> opponent = gamePlayer.getGame().getGamePlayers().stream().filter(gp -> gp.getId() != gamePlayerId)
-////                    .findFirst().get();
-////
-////        if (opponent.isPresent()) { //TODO: is an optional needed here?
-//        Salvo salvoOpp = salvoOpps.stream().filter(s -> s.getTurn() == turn).findFirst().get();
-//        dto.put("hitsOnYou", makeHitStatsDTO(salvoOpp, hitsOverallOpp, sunkShipsOpp, previouslySunkOpp));
-////        }
-//        return dto;
-//    }
-
-
-//    //this passes through all the data of one players salvos and the opposing player ships
-//    private Map<String, Object> makeHitStatsDTO(Salvo salvo, List hitsOverall, Integer sunkShips, List previouslySunkShips) {
-//        Map<String, Object> dto = new LinkedHashMap<String, Object>();
-//        Long gpId = salvo.getGamePlayer().getId(); //needed to determine opponent (ie not this gp)
-//        List<String> hitsPerTurn = new ArrayList<>(); //this will have name of hit ships passed to it
-//        List sunkShipList = new ArrayList(); //This needs to be outside of the turn loops //ASK: is this best here????
-//        List mySalvoLocations = salvo.getLocations(); // This gets player's salvoes
-//        Set<Ship> oppShips = salvo.getGamePlayer().getGame().getGamePlayers().stream().filter(gp -> gp.getId() != gpId)
-//                .findFirst().get().getShip(); //this gets the opposing player's ships
-//
-//        for (Object mySalvoLocation : mySalvoLocations) { // for each different salvo location
-//            for (Ship oppShip : oppShips) {
-//                String type = oppShip.getType();
-//                List shipLocations = oppShip.getLocations();
-//                if (shipLocations.contains(mySalvoLocation)) { //check if ship locations contains same location as the salvo
-//                    hitsPerTurn.add(type); //if so push ship type to the hits array for this turn
-//                    hitsOverall.add(type); //if so push ship type to the hits array for all turns so far
-//                }
-//            }
-//        } //ASK: How can this be written as a stream????
-//        if (Collections.frequency(hitsOverall, "aircraftCarrier") == 5) {
-//            sunkShips += 1;
-//            if (previouslySunkShips.contains("aircraftCarrier") == false){
-//                sunkShipList.add(" Aircraft Carrier");
-//                previouslySunkShips.add("aircraftCarrier");
-//            }
-//        }
-//        if (Collections.frequency(hitsOverall, "battleship") == 4) {
-//            sunkShips += 1;
-//            if (previouslySunkShips.contains("battleship") == false) {
-//                sunkShipList.add(" Battleship");
-//                previouslySunkShips.add("battleship");
-//            }
-//        }
-//        if (Collections.frequency(hitsOverall, "submarine") == 3) {
-//            sunkShips += 1;
-//            if (previouslySunkShips.contains("submarine") == false) {
-//                sunkShipList.add(" Submarine");
-//                previouslySunkShips.add("submarine");
-//            }
-//        }
-//        if (Collections.frequency(hitsOverall, "destroyer") == 3) {
-//            sunkShips += 1;
-//            if (previouslySunkShips.contains("destroyer") == false) {
-//                sunkShipList.add(" Destroyer");
-//                previouslySunkShips.add("destroyer");
-//            }
-//        }
-//        if (Collections.frequency(hitsOverall, "patrolBoat") == 2) {
-//            sunkShips += 1;
-//            if (previouslySunkShips.contains("patrolBoat") == false) {
-//                sunkShipList.add(" Patrol Boat");
-//                previouslySunkShips.add("patrolBoat");
-//            }
-//        }
-//
-//        dto.put("shipsLeft", 5 - sunkShips); //TODO: remove this and use 5 - sunkShipsList.size
-//        dto.put("shipsSunk", sunkShipList);
-//        dto.put("hitsPerTurn", makeTurnHitsDTO(hitsPerTurn));
-//        return dto;
-//    }
-
-    //make new object to record only the ships hit per turn
-    private Map<String, Object> makeTurnHitsDTO(List hitsPerTurn) {
-        Map<String, Integer> shipsHit = new LinkedHashMap<String, Integer>();
-        for (Object ship : hitsPerTurn) {
-            String type = ship.toString();
-            if (shipsHit.containsKey(type)){ //if ship name is already included in the 'shipsHit' array
-                int existingVal = shipsHit.get(type); //get the number if hits
-                int newVal = existingVal + 1; // increase them by 1
-                shipsHit.remove(type);
-                shipsHit.put(type, newVal); //
-            } else {
-                shipsHit.put(type, 1);
-            }
-        }
-
-        Map<String, Object> dto = new LinkedHashMap<String, Object>();
-        dto.put("shipsHit", shipsHit);
-        return dto;
-    }
 
     /******************************** API /SCORES *******************************************/
 //   4. List of GamePlayer results
@@ -364,7 +95,7 @@ public class SalvoController {
                 Integer lost = 0;
                 Integer tied = 0;
                 //This checks the game result and updates the count for the relevant result (won, lost, or tied)
-                String result = returnResult(gameScore.getScore());
+                String result = salvoService.returnResult(gameScore.getScore());
                 if (result.equals("won")) {
                     won = (Integer) playerScore.get("won");
                     won++;
@@ -381,7 +112,7 @@ public class SalvoController {
                 playerScore.put("tied", tied);
 
             } else { //If no player exists for this id then create initial data with playerId, nickname, and scores
-                scoreStats.put(id, makeScoreStatsDTO(gameScore));
+                scoreStats.put(id, salvoService.makeScoreStatsDTO(gameScore));
             }
         }
         // This converts the map within a map with the long id into a simple array of the maps for the player score stats
@@ -397,36 +128,6 @@ public class SalvoController {
 
     }
 
-    private Map<String, Object> makeScoreStatsDTO(GameScore gameScore) {
-        Map<String, Object> dto = new LinkedHashMap<String, Object>();
-        dto.put("playerId", gameScore.getPlayer().getId());
-        dto.put("nickname", gameScore.getPlayer().getNickname());
-        dto.put("score", gameScore.getScore());
-        dto.put("won", 0);
-        dto.put("lost", 0);
-        dto.put("tied", 0);
-        String result = returnResult(gameScore.getScore());
-
-        //Here I need to put something which decides which result to populate with value 1
-        if (result.equals("won")) {
-            dto.put("won", 1);
-        } else if (result.equals("lost")) {
-            dto.put("lost", 1);
-        } else {
-            dto.put("tied", 1);
-        }
-        return dto;
-    }
-
-    private String returnResult(double score) {
-        if (score < 0.5) {
-            return "lost";
-        } else if (score > 0.5) {
-            return "won";
-        } else {
-            return "tied";
-        }
-    }
 
     /*********************************** API /PLAYERS ****************************************/
     //5. Create new players
@@ -438,29 +139,23 @@ public class SalvoController {
                                                             @RequestParam String password) {
         Player player = pRepo.findByUsername(username); //gives a 409 Conflict Error
         if (player != null) {
-            return new ResponseEntity<Map<String, Object>>(makeMap("error", "Username(email) already in use"), HttpStatus.CONFLICT);
+            return new ResponseEntity<Map<String, Object>>(salvoService.makeMap("error", "Username(email) already in use"), HttpStatus.CONFLICT);
         } else {
             player = pRepo.save(new Player(nickname, username, password)); //gives a 201 Created message
-            return new ResponseEntity<Map<String, Object>>(makeMap("player", player.getUsername()), HttpStatus.CREATED);
+            return new ResponseEntity<Map<String, Object>>(salvoService.makeMap("player", player.getUsername()), HttpStatus.CREATED);
         }
 
     }
 
-    //this is needed to build the method makeMap
-    private Map<String, Object> makeMap(String key, Object value) {
-        Map<String, Object> map = new HashMap<>();
-        map.put(key, value);
-        return map;
-    }
 
     /*********************************** API /NEW GAME ****************************************/
     //6. Create new game
     @RequestMapping(path = "/newGame", method = RequestMethod.POST)
     public ResponseEntity<Map<String, Object>> createGame(Authentication authentication) {
-        Player player = pRepo.findByUsername(getUsername(authentication));
+        Player player = pRepo.findByUsername(salvoService.getUsername(authentication));
         Game game = repo.save(new Game(0l));
         GamePlayer gamePlayer = gpRepo.save(new GamePlayer(game, player));
-        return new ResponseEntity<>(makeMap("gamePlayerId", gamePlayer.getId()), HttpStatus.CREATED);
+        return new ResponseEntity<>(salvoService.makeMap("gamePlayerId", gamePlayer.getId()), HttpStatus.CREATED);
     }
 
 
@@ -468,27 +163,27 @@ public class SalvoController {
     //7. Add new player to an existing game, saving new gameplayer id to the gpRepo and updating game in repo too.
     @RequestMapping(path = "/games/{gameId}/players", method = RequestMethod.POST)
     public ResponseEntity<Map<String, Object>> checkGamebyId(@PathVariable Long gameId, Authentication authentication) {
-        Player player = pRepo.findByUsername(getUsername(authentication)); //to check if player loggedin
+        Player player = pRepo.findByUsername(salvoService.getUsername(authentication)); //to check if player loggedin
         if (player == null) {
-            return new ResponseEntity<>(makeMap("error", "Not logged in"), HttpStatus.UNAUTHORIZED); //401 Works! :)
+            return new ResponseEntity<>(salvoService.makeMap("error", "Not logged in"), HttpStatus.UNAUTHORIZED); //401 Works! :)
         }
         Game game = repo.findOne(gameId); //check if game id exists
         if (game == null) {
-            return new ResponseEntity<>(makeMap("error", "No such game"), HttpStatus.FORBIDDEN); //403 Works! :)
+            return new ResponseEntity<>(salvoService.makeMap("error", "No such game"), HttpStatus.FORBIDDEN); //403 Works! :)
         }
         Integer players = repo.findOne(gameId).getGamePlayers().size(); // check less than 2 players in the game
         if (players == 2) {
-            return new ResponseEntity<>(makeMap("error", "Game is full"), HttpStatus.FORBIDDEN); //403 Works! :)
+            return new ResponseEntity<>(salvoService.makeMap("error", "Game is full"), HttpStatus.FORBIDDEN); //403 Works! :)
         }
         //add player as a gamePlayer in the game - Check current player in open game is not same logged in user - compare usernames
         Player currentPlayer = repo.findOne(gameId).getGamePlayers().stream().map(gps -> gps.getPlayer()).findFirst().get();
         String currentPlayerUsername = currentPlayer.getUsername();
         String playerUsername = player.getUsername();
         if (playerUsername == currentPlayerUsername) {
-            return new ResponseEntity<>(makeMap("error", "You are already playing in this game"), HttpStatus.FORBIDDEN); //403 Works :)
+            return new ResponseEntity<>(salvoService.makeMap("error", "You are already playing in this game"), HttpStatus.FORBIDDEN); //403 Works :)
         }
         GamePlayer gamePlayer = gpRepo.save(new GamePlayer(game, player));
-        return new ResponseEntity<>(makeMap("gamePlayerId", gamePlayer.getId()), HttpStatus.CREATED); //201 Works! :)
+        return new ResponseEntity<>(salvoService.makeMap("gamePlayerId", gamePlayer.getId()), HttpStatus.CREATED); //201 Works! :)
     }
 
     /************************* API /ADD SHIPS (add ships to existing game for specific gameplayer id) ********************************/
@@ -500,7 +195,7 @@ public class SalvoController {
         verifyGamePlayer(gpId, authentication);
 
         if (gamePlayer.getShip().size() == 5) { // If 5 ships have already been placed
-            return new ResponseEntity<>(makeMap("error", "You have already placed ships for this game"), HttpStatus.FORBIDDEN); //403 Works! :)
+            return new ResponseEntity<>(salvoService.makeMap("error", "You have already placed ships for this game"), HttpStatus.FORBIDDEN); //403 Works! :)
         }
 
         for (Ship ship : ships) {
@@ -509,7 +204,7 @@ public class SalvoController {
 
         List<Ship> saved = shRepo.save(ships);
 
-        return new ResponseEntity<>(makeMap("shipIds", saved.stream().map(s -> s.getId()).collect(toList())), HttpStatus.CREATED); //201
+        return new ResponseEntity<>(salvoService.makeMap("shipIds", saved.stream().map(s -> s.getId()).collect(toList())), HttpStatus.CREATED); //201
     }
 
 
@@ -523,44 +218,43 @@ public class SalvoController {
         verifyGamePlayer(gpId, authentication);
         int turn = gamePlayer.getSalvo().size() + 1; //gets turn  umber based on current no. of salvos saved to repo
 
-
         salvo.setGamePlayer(gamePlayer);
         salvo.setTurn(turn);
 
         //Validation to make sure turn is not repeated
         List<Integer> turns = gamePlayer.getSalvo().stream().map(sl -> sl.getTurn()).collect(toList());
         if (turns.contains(turn)) {
-            return new ResponseEntity<>(makeMap("error", "You have already fired salvoes for this turn"), HttpStatus.FORBIDDEN); //403 Working :)
+            return new ResponseEntity<>(salvoService.makeMap("error", "You have already fired salvoes for this turn"), HttpStatus.FORBIDDEN); //403 Working :)
         }
 
         //Validation to make sure no salvoes are fired after game is complete
         if (gamePlayer.getGame().getGameScores().size() > 0) {
-            return new ResponseEntity<>(makeMap("error", "Game Over! Stop trying to fire Salvoes"), HttpStatus.FORBIDDEN); //403  Works! :)
+            return new ResponseEntity<>(salvoService.makeMap("error", "Game Over! Stop trying to fire Salvoes"), HttpStatus.FORBIDDEN); //403  Works! :)
         }
 
         slRepo.save(salvo);
-        return new ResponseEntity<>(makeMap("salvoIds", salvo.getId()), HttpStatus.CREATED); //201
+        return new ResponseEntity<>(salvoService.makeMap("salvoIds", salvo.getId()), HttpStatus.CREATED); //201
     }
 
 
     //Auxiliary function to check player is logged in and is a gamePlayer in the game
     public ResponseEntity<Map<String, Object>> verifyGamePlayer(Long gpId, Authentication authentication) {
-        Player player = pRepo.findByUsername(getUsername(authentication)); //to check if player loggedin
+        Player player = pRepo.findByUsername(salvoService.getUsername(authentication)); //to check if player loggedin
         if (player == null) {
-            return new ResponseEntity<>(makeMap("error", "Not logged in"), HttpStatus.UNAUTHORIZED); //401 Works! :)
+            return new ResponseEntity<>(salvoService.makeMap("error", "Not logged in"), HttpStatus.UNAUTHORIZED); //401 Works! :)
         }
         GamePlayer gamePlayer = gpRepo.findOne(gpId); //check if gamePlayer id exists
         if (gamePlayer == null) {
-            return new ResponseEntity<>(makeMap("error", "No such gamePlayer"), HttpStatus.UNAUTHORIZED); //401 Works! :)
+            return new ResponseEntity<>(salvoService.makeMap("error", "No such gamePlayer"), HttpStatus.UNAUTHORIZED); //401 Works! :)
         }//
         //Check current player in open game is not same logged in user - comparing usernames //TODO: extract this to be used for salvoes too
         Long gameId = gamePlayer.getGame().getId();
         String currentPlayerUsername = gamePlayer.getPlayer().getUsername();
         String playerUsername = player.getUsername();
         if (playerUsername != currentPlayerUsername) {
-            return new ResponseEntity<>(makeMap("error", "You are not the gamePlayer in this game"), HttpStatus.UNAUTHORIZED); //401 Works! :)
+            return new ResponseEntity<>(salvoService.makeMap("error", "You are not the gamePlayer in this game"), HttpStatus.UNAUTHORIZED); //401 Works! :)
         }
-        return new ResponseEntity<>(makeMap("status", "Player & gamePlayer authorized"), HttpStatus.OK);
+        return new ResponseEntity<>(salvoService.makeMap("status", "Player & gamePlayer authorized"), HttpStatus.OK);
     }
 
 
@@ -573,9 +267,9 @@ public class SalvoController {
         long gameId = gamePlayer.getGame().getId();
         String playerId = gamePlayer.getPlayer().getUsername();
         Long yourPlayerId = gamePlayer.getPlayer().getId();
-        String loggedInUser = getUsername(authentication);
+        String loggedInUser = salvoService.getUsername(authentication);
         if (playerId != loggedInUser) {//if player id for gameplayer & logged are not the same give error
-            Map<String, Object> result = makeMap("Error", new ResponseEntity<String>("Sorry, you are not a player in this game", HttpStatus.UNAUTHORIZED));
+            Map<String, Object> result = salvoService.makeMap("Error", new ResponseEntity<String>("Sorry, you are not a player in this game", HttpStatus.UNAUTHORIZED));
             return result;
 
         } // TODO: this is duplicated in game view so can be extracted to a new method
@@ -607,91 +301,13 @@ public class SalvoController {
             dto.put("opponentPlayerId", opponentPlayerId);
 
             dto.put("hits", gamePlayer.getSalvo().stream().sorted(Comparator.comparing(Salvo::getTurn))
-                    .map(salvoYou -> makeTurnStatsDTO(salvoYou, salvoOpps,
+                    .map(salvoYou -> salvoService.makeTurnStatsDTO(salvoYou, salvoOpps,
                             hitsOverallYou, hitsOverallOpp, previouslySunkYou, previouslySunkOpp,
                             sunkShipsYou, sunkShipsOpp)).collect(toList()));
 
           return dto;
     }
 
-
-    private Map<String, Object> makeTurnStatsDTO(Salvo salvoYou, Set<Salvo> salvoOpps, List hitsOverallYou, List hitsOverallOpp,
-                                                 List previouslySunkYou, List previouslySunkOpp,
-                                                 Integer sunkShipsYou, Integer sunkShipsOpp) {
-        Map<String, Object> dto = new LinkedHashMap<String, Object>();
-        dto.put("turn", salvoYou.getTurn());
-        int turn = salvoYou.getTurn();
-        dto.put("hitsOnOpp", makeHitStatsDTO(salvoYou, hitsOverallYou, sunkShipsYou, previouslySunkYou));
-
-        Optional<Salvo> optionalSalvoes = salvoOpps.stream().filter(s -> s.getTurn() == turn).findFirst();
-        if (optionalSalvoes.isPresent()) {
-            dto.put("hitsOnYou", makeHitStatsDTO(optionalSalvoes.get(), hitsOverallOpp, sunkShipsOpp, previouslySunkOpp));
-        }
-
-        return dto;
-    }
-
-    //this passes through all the data of one players salvos and the opposing player ships
-    private Map<String, Object> makeHitStatsDTO(Salvo salvo, List hitsOverall, Integer sunkShips, List previouslySunkShips) {
-        Map<String, Object> dto = new LinkedHashMap<String, Object>();
-        Long gpId = salvo.getGamePlayer().getId();
-        List<String> hitsPerTurn = new ArrayList<>();
-        List<String> sunkShipList = new ArrayList();
-        List<String> mySalvoLocations = salvo.getLocations();
-        Set<Ship> oppShips = salvo.getGamePlayer().getGame().getGamePlayers().stream().filter(gp -> gp.getId() != gpId)
-                .findFirst().get().getShip();
-
-        for (String mySalvoLocation : mySalvoLocations) {
-            for (Ship oppShip : oppShips) {
-                String type = oppShip.getType();
-                List shipLocations = oppShip.getLocations();
-                if (shipLocations.contains(mySalvoLocation)) { //check if ship locations contains same location as the salvo
-                    hitsPerTurn.add(type); //if so push ship type to the hits array for this turn
-                    hitsOverall.add(type); //if so push ship type to the hits array for all turns so far
-                }
-            }
-        } //ASK: How can this be written as a stream????
-        if (Collections.frequency(hitsOverall, "aircraftCarrier") == 5) {
-            sunkShips += 1;
-            if (previouslySunkShips.contains("aircraftCarrier") == false){
-                sunkShipList.add(" Aircraft Carrier");
-                previouslySunkShips.add("aircraftCarrier");
-            }
-        }
-        if (Collections.frequency(hitsOverall, "battleship") == 4) {
-            sunkShips += 1;
-            if (previouslySunkShips.contains("battleship") == false) {
-                sunkShipList.add(" Battleship");
-                previouslySunkShips.add("battleship");
-            }
-        }
-        if (Collections.frequency(hitsOverall, "submarine") == 3) {
-            sunkShips += 1;
-            if (previouslySunkShips.contains("submarine") == false) {
-                sunkShipList.add(" Submarine");
-                previouslySunkShips.add("submarine");
-            }
-        }
-        if (Collections.frequency(hitsOverall, "destroyer") == 3) {
-            sunkShips += 1;
-            if (previouslySunkShips.contains("destroyer") == false) {
-                sunkShipList.add(" Destroyer");
-                previouslySunkShips.add("destroyer");
-            }
-        }
-        if (Collections.frequency(hitsOverall, "patrolBoat") == 2) {
-            sunkShips += 1;
-            if (previouslySunkShips.contains("patrolBoat") == false) {
-                sunkShipList.add(" Patrol Boat");
-                previouslySunkShips.add("patrolBoat");
-            }
-        }
-
-        dto.put("shipsLeft", 5 - sunkShips); //TODO: remove this and use 5 - sunkShipsList.size
-        dto.put("shipsSunk", sunkShipList);
-        dto.put("hitsPerTurn", makeTurnHitsDTO(hitsPerTurn));
-        return dto;
-    }
 
     /************************* API /ADD SCORE (add score to to player repo using player Id & game Id) ********************************/
     //11. Add score to finished game
@@ -712,21 +328,11 @@ public class SalvoController {
 //        GameScore gameScore = new GameScore(0, game, player, score);
         gsRepo.save(gameScore);
 
-        return new ResponseEntity<>(makeMap("gameScoreId", gameScore.getId()), HttpStatus.CREATED); //201
+        return new ResponseEntity<>(salvoService.makeMap("gameScoreId", gameScore.getId()), HttpStatus.CREATED); //201
     }
 //TODO: make it so you can only access your own game scores
 
-    //hardcoding everything works
-//    public ResponseEntity<Map<String, Object>> addGameScore(@PathVariable Long playerId) {
-//        Player player = pRepo.findOne(1l);
-//        Game game = repo.findOne(5l);
-//
-//        GameScore gameScore = new GameScore(0, game, player, 1);
-////        GameScore gameScore = new GameScore(0, game, player, score);
-//        gsRepo.save(gameScore);
-//
-//        return new ResponseEntity<>(makeMap("gameScoreId", gameScore.getId()), HttpStatus.CREATED); //201
-//    }
+
 
 
 /** End of all functions **/
