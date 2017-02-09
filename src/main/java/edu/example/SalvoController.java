@@ -3,7 +3,6 @@ package edu.example;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
@@ -18,25 +17,18 @@ import static java.util.stream.Collectors.toList;
 @RequestMapping("/api")
 public class SalvoController {
 
-    @Autowired //this injects an instance of the class GameRepository for use by this controller (Dependency Injection)
+    @Autowired //this injects an instance of the classes to be used by this controller (Dependency Injection)
     private GameRepository repo;
     @Autowired
-    //this injects an instance of the class GamePlayerRepository for use by this controller (Dependency Injection)
     private GamePlayerRepository gpRepo;
     @Autowired
-    //this injects an instance of the class GamePlayerRepository for use by this controller (Dependency Injection)
     private GameScoreRepository gsRepo;
     @Autowired
-    //this injects an instance of the class PlayerRepository for use by this controller (Dependency Injection)
     private PlayerRepository pRepo;
     @Autowired
-    //this injects an instance of the class ShipRepository for use by this controller (Dependency Injection)
-    private ShipRepository shRepo;
-    @Autowired
-    //this injects an instance of the class SalvoRepository for use by this controller (Dependency Injection)
-    private SalvoRepository slRepo;
-    @Autowired //this injects an instance of the class GameRepository for use by this controller (Dependency Injection)
     private SalvoService salvoService;
+    @Autowired
+    private ValidationService validationService;
 
     /****************************** API /GAMES **************************************/
     //1. List of All games to be shown whether user logged in or not
@@ -67,10 +59,10 @@ public class SalvoController {
         String playerId = gamePlayer.getPlayer().getUsername();
         String loggedInUser = salvoService.getUsername(authentication);
         if (playerId == loggedInUser) {//if player id for gameplayer & logged are the same -> return game view
-            return salvoService.makeGameViewDTO(gamePlayer, gamePlayerId, gameId);
-        } else {
-            Map<String, Object> result = salvoService.makeMap("Error", new ResponseEntity<String>("Sorry, you are not a player in this game", HttpStatus.UNAUTHORIZED));
-            return result;
+                return salvoService.makeGameViewDTO(gamePlayer, gamePlayerId, gameId);
+            } else {
+                Map<String, Object> result = salvoService.makeMap("Error", new ResponseEntity<String>("Sorry, you are not a player in this game", HttpStatus.UNAUTHORIZED));
+                return result;
         }
     }
 
@@ -138,12 +130,8 @@ public class SalvoController {
                                                             @RequestParam String username,
                                                             @RequestParam String password) {
         Player player = pRepo.findByUsername(username); //gives a 409 Conflict Error
-        if (player != null) {
-            return new ResponseEntity<Map<String, Object>>(salvoService.makeMap("error", "Username(email) already in use"), HttpStatus.CONFLICT);
-        } else {
-            player = pRepo.save(new Player(nickname, username, password)); //gives a 201 Created message
-            return new ResponseEntity<Map<String, Object>>(salvoService.makeMap("player", player.getUsername()), HttpStatus.CREATED);
-        }
+
+        return validationService.validatePlayer(player, nickname, username, password);
 
     }
 
@@ -155,6 +143,7 @@ public class SalvoController {
         Player player = pRepo.findByUsername(salvoService.getUsername(authentication));
         Game game = repo.save(new Game(0l));
         GamePlayer gamePlayer = gpRepo.save(new GamePlayer(game, player));
+
         return new ResponseEntity<>(salvoService.makeMap("gamePlayerId", gamePlayer.getId()), HttpStatus.CREATED);
     }
 
@@ -163,28 +152,13 @@ public class SalvoController {
     //7. Add new player to an existing game, saving new gameplayer id to the gpRepo and updating game in repo too.
     @RequestMapping(path = "/games/{gameId}/players", method = RequestMethod.POST)
     public ResponseEntity<Map<String, Object>> checkGamebyId(@PathVariable Long gameId, Authentication authentication) {
+
         Player player = pRepo.findByUsername(salvoService.getUsername(authentication)); //to check if player loggedin
-        if (player == null) {
-            return new ResponseEntity<>(salvoService.makeMap("error", "Not logged in"), HttpStatus.UNAUTHORIZED); //401 Works! :)
-        }
-        Game game = repo.findOne(gameId); //check if game id exists
-        if (game == null) {
-            return new ResponseEntity<>(salvoService.makeMap("error", "No such game"), HttpStatus.FORBIDDEN); //403 Works! :)
-        }
-        Integer players = repo.findOne(gameId).getGamePlayers().size(); // check less than 2 players in the game
-        if (players == 2) {
-            return new ResponseEntity<>(salvoService.makeMap("error", "Game is full"), HttpStatus.FORBIDDEN); //403 Works! :)
-        }
-        //add player as a gamePlayer in the game - Check current player in open game is not same logged in user - compare usernames
-        Player currentPlayer = repo.findOne(gameId).getGamePlayers().stream().map(gps -> gps.getPlayer()).findFirst().get();
-        String currentPlayerUsername = currentPlayer.getUsername();
-        String playerUsername = player.getUsername();
-        if (playerUsername == currentPlayerUsername) {
-            return new ResponseEntity<>(salvoService.makeMap("error", "You are already playing in this game"), HttpStatus.FORBIDDEN); //403 Works :)
-        }
-        GamePlayer gamePlayer = gpRepo.save(new GamePlayer(game, player));
-        return new ResponseEntity<>(salvoService.makeMap("gamePlayerId", gamePlayer.getId()), HttpStatus.CREATED); //201 Works! :)
+
+        return validationService.validateGame(player, gameId);
+
     }
+
 
     /************************* API /ADD SHIPS (add ships to existing game for specific gameplayer id) ********************************/
     //8. Add ships
@@ -192,19 +166,10 @@ public class SalvoController {
     //the ships will be passed as a list from the front end
     public ResponseEntity<Map<String, Object>> addShip(@PathVariable Long gpId, @RequestBody List<Ship> ships, Authentication authentication) {
         GamePlayer gamePlayer = gpRepo.findOne(gpId);
-        verifyGamePlayer(gpId, authentication);
+        validationService.verifyGamePlayer(gpId, authentication);
 
-        if (gamePlayer.getShip().size() == 5) { // If 5 ships have already been placed
-            return new ResponseEntity<>(salvoService.makeMap("error", "You have already placed ships for this game"), HttpStatus.FORBIDDEN); //403 Works! :)
-        }
+        return validationService.validateShips(gamePlayer, ships);
 
-        for (Ship ship : ships) {
-            ship.setGamePlayer(gamePlayer);
-        }
-
-        List<Ship> saved = shRepo.save(ships);
-
-        return new ResponseEntity<>(salvoService.makeMap("shipIds", saved.stream().map(s -> s.getId()).collect(toList())), HttpStatus.CREATED); //201
     }
 
 
@@ -215,47 +180,16 @@ public class SalvoController {
     public ResponseEntity<Map<String, Object>> addSalvo(@PathVariable Long gpId, @RequestBody Salvo salvo, Authentication authentication) {
 
         GamePlayer gamePlayer = gpRepo.findOne(gpId);
-        verifyGamePlayer(gpId, authentication);
+        validationService.verifyGamePlayer(gpId, authentication);
         int turn = gamePlayer.getSalvo().size() + 1; //gets turn  umber based on current no. of salvos saved to repo
 
         salvo.setGamePlayer(gamePlayer);
         salvo.setTurn(turn);
 
-        //Validation to make sure turn is not repeated
-        List<Integer> turns = gamePlayer.getSalvo().stream().map(sl -> sl.getTurn()).collect(toList());
-        if (turns.contains(turn)) {
-            return new ResponseEntity<>(salvoService.makeMap("error", "You have already fired salvoes for this turn"), HttpStatus.FORBIDDEN); //403 Working :)
-        }
+        return validationService.validateSalvoes(gamePlayer, turn, salvo);
 
-        //Validation to make sure no salvoes are fired after game is complete
-        if (gamePlayer.getGame().getGameScores().size() > 0) {
-            return new ResponseEntity<>(salvoService.makeMap("error", "Game Over! Stop trying to fire Salvoes"), HttpStatus.FORBIDDEN); //403  Works! :)
-        }
-
-        slRepo.save(salvo);
-        return new ResponseEntity<>(salvoService.makeMap("salvoIds", salvo.getId()), HttpStatus.CREATED); //201
     }
 
-
-    //Auxiliary function to check player is logged in and is a gamePlayer in the game
-    public ResponseEntity<Map<String, Object>> verifyGamePlayer(Long gpId, Authentication authentication) {
-        Player player = pRepo.findByUsername(salvoService.getUsername(authentication)); //to check if player loggedin
-        if (player == null) {
-            return new ResponseEntity<>(salvoService.makeMap("error", "Not logged in"), HttpStatus.UNAUTHORIZED); //401 Works! :)
-        }
-        GamePlayer gamePlayer = gpRepo.findOne(gpId); //check if gamePlayer id exists
-        if (gamePlayer == null) {
-            return new ResponseEntity<>(salvoService.makeMap("error", "No such gamePlayer"), HttpStatus.UNAUTHORIZED); //401 Works! :)
-        }//
-        //Check current player in open game is not same logged in user - comparing usernames //TODO: extract this to be used for salvoes too
-        Long gameId = gamePlayer.getGame().getId();
-        String currentPlayerUsername = gamePlayer.getPlayer().getUsername();
-        String playerUsername = player.getUsername();
-        if (playerUsername != currentPlayerUsername) {
-            return new ResponseEntity<>(salvoService.makeMap("error", "You are not the gamePlayer in this game"), HttpStatus.UNAUTHORIZED); //401 Works! :)
-        }
-        return new ResponseEntity<>(salvoService.makeMap("status", "Player & gamePlayer authorized"), HttpStatus.OK);
-    }
 
 
     /************************* API /GAME HISTORY (get details by turn) ********************************/
